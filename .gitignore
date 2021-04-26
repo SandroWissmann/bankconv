@@ -1,0 +1,5 @@
+**/.__init__pyc 
+**/__pycache__/
+/src/bankconv.egg-info
+.venv
+.vscode
