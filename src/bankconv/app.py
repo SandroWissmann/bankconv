@@ -38,6 +38,7 @@ def getTextLinesFromPDF(directory: str, filename_pdf: str) -> List[str]:
     text = text.replace(r"\xc3\xa4", "ä")
     text = text.replace(r"\xc3\xb6", "ö")
     text = text.replace(r"\xc3\xbc", "ü")
+    text = text.replace(r"xc3x9c", "Ü")
     text = text.replace(r"\xc3\x9f", "ß")
 
     text_lines: List[str] = text.split("\\n")
@@ -70,11 +71,25 @@ def writeTextLinesToFileInDir(
 @dataclass
 class CreditCardEntry:
     credit_card_number: str
+    recite_day: int
+    recite_month: int
+    recite_year: int
+    booking_day: int
+    booking_month: int
+    booking_year: int
     recite_date: str
     booking_date: str
     amount: float
     currency: str
     description: str
+
+
+class CreditCardBilling:
+    def __init__(self, year):
+        self.year = year
+
+    def add_billing_data(self, text_lines: List[str]):
+        return None
 
 
 def main():
