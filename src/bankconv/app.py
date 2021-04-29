@@ -46,6 +46,19 @@ def getTextLinesFromPDF(directory: str, filename_pdf: str) -> List[str]:
     return text_lines
 
 
+def getYearFromFilenamePDF(filename_pdf: str):
+    """
+    Function expects a pdf file were the first 4 chars represent the year.
+    Returns Year as int or none if not valid.
+    """
+    if len(filename_pdf) < 4:
+        return None
+    year: str = filename_pdf[:4]
+    if not year.isdigit():
+        return None
+    return int(year)
+
+
 def getFilenameTxtAbsolut(directory: str, filename_pdf: str) -> str:
     """
     Get txt filename absolut based on pdf filename.
@@ -101,6 +114,11 @@ def main():
             continue
 
         text_lines: List[str] = getTextLinesFromPDF(directory, filename_pdf)
+
+        year = getYearFromFilenamePDF(filename_pdf)
+        if year is None:
+            print("Invalid pdf {}".format(filename_pdf))
+            continue
 
         filename_txt_absolut: str = getFilenameTxtAbsolut(
             directory, filename_pdf
