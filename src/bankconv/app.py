@@ -38,7 +38,9 @@ def getTextLinesFromPDF(directory: str, filename_pdf: str) -> List[str]:
     text = text.replace(r"\xc3\xbc", "ü")
     text = text.replace(r"\xc3\x9f", "ß")
 
-    return text.split("\\n")
+    text_lines: List[str] = text.split("\\n")
+    text_lines = [s.replace("\\", "") for s in text_lines]
+    return text_lines
 
 
 def getFilenameTxtAbsolut(directory: str, filename_pdf: str) -> str:
