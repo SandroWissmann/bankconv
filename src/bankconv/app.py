@@ -2,6 +2,8 @@
 
 from typing import List
 
+from dataclasses import dataclass
+
 import tkinter as tk
 import tkinter.filedialog
 
@@ -63,6 +65,16 @@ def writeTextLinesToFileInDir(
         text_file.write(text_line)
         text_file.write("\n")
     text_file.close()
+
+
+@dataclass
+class CreditCardEntry:
+    credit_card_number: str
+    recite_date: str
+    booking_date: str
+    amount: float
+    currency: str
+    description: str
 
 
 def main():
