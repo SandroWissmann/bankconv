@@ -32,6 +32,12 @@ def getTextLinesFromPDF(directory: str, filename_pdf: str) -> List[str]:
 
     raw: str = str(parser.from_file(filename_pdf_absolut))
     text: str = str(raw.encode("utf-8", errors="ignore"))
+
+    text = text.replace(r"\xc3\xa4", "ä")
+    text = text.replace(r"\xc3\xb6", "ö")
+    text = text.replace(r"\xc3\xbc", "ü")
+    text = text.replace(r"\xc3\x9f", "ß")
+
     return text.split("\\n")
 
 
