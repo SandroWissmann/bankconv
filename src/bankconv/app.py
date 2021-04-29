@@ -31,9 +31,9 @@ class CreditCardEntry:
 
 class CreditCardBilling:
     def __init__(self):
-        None
+        self.credit_card_entries: List[CreditCardEntry] = []
 
-    def add_billing_data(self, text_lines: List[str]):
+    def add_monthly_billing_data(self, text_lines: List[str]):
         print("add billing to year")
 
 
@@ -97,7 +97,7 @@ def main():
     # iterate over all pdf files in folder
     directory: str = get_directory()
 
-    credit_card_billings: List[CreditCardBilling] = []
+    credit_card_billing: CreditCardBilling = CreditCardBilling()
 
     filenames_pdf: List[str] = os.listdir(directory)
     filenames_pdf.sort()
@@ -108,6 +108,8 @@ def main():
         text_lines: List[str] = get_text_lines_from_pdf(
             directory, filename_pdf
         )
+
+        credit_card_billing.add_monthly_billing_data(text_lines)
 
         filename_txt_absolut: str = get_filename_txt_absolut(
             directory, filename_pdf
