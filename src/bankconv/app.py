@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from typing import List
+from typing import Union
 
 from dataclasses import dataclass
 
@@ -12,7 +13,7 @@ import os
 from tika import parser
 
 
-def getDirectory() -> str:
+def get_directory() -> str:
     """
     Select directory from GUI User input and return it.
     """
@@ -24,7 +25,7 @@ def getDirectory() -> str:
     return directory
 
 
-def getTextLinesFromPDF(directory: str, filename_pdf: str) -> List[str]:
+def get_text_lines_from_pdf(directory: str, filename_pdf: str) -> List[str]:
     """
     Extract Text from PDF file.
     Requires input to be a pdf file.
@@ -46,7 +47,7 @@ def getTextLinesFromPDF(directory: str, filename_pdf: str) -> List[str]:
     return text_lines
 
 
-def getYearFromFilenamePDF(filename_pdf: str):
+def get_year_from_filename_pdf(filename_pdf: str) -> Union[int, None]:
     """
     Function expects a pdf file were the first 4 chars represent the year.
     Returns Year as int or none if not valid.
@@ -59,7 +60,7 @@ def getYearFromFilenamePDF(filename_pdf: str):
     return int(year)
 
 
-def getFilenameTxtAbsolut(directory: str, filename_pdf: str) -> str:
+def get_filename_txt_absolut(directory: str, filename_pdf: str) -> str:
     """
     Get txt filename absolut based on pdf filename.
     """
@@ -68,7 +69,7 @@ def getFilenameTxtAbsolut(directory: str, filename_pdf: str) -> str:
     return filename_txt_absolut
 
 
-def writeTextLinesToFileInDir(
+def write_text_lines_to_file_in_dir(
     filename_txt_absolut: str, text_lines: List[str]
 ) -> None:
     """
@@ -107,24 +108,26 @@ class CreditCardBilling:
 
 def main():
     # iterate over all pdf files in folder
-    directory: str = getDirectory()
+    directory: str = get_directory()
 
     for filename_pdf in os.listdir(directory):
         if not filename_pdf.lower().endswith(".pdf"):
             continue
 
-        text_lines: List[str] = getTextLinesFromPDF(directory, filename_pdf)
+        text_lines: List[str] = get_text_lines_from_pdf(
+            directory, filename_pdf
+        )
 
-        year = getYearFromFilenamePDF(filename_pdf)
+        year = get_year_from_filename_pdf(filename_pdf)
         if year is None:
             print("Invalid pdf {}".format(filename_pdf))
             continue
 
-        filename_txt_absolut: str = getFilenameTxtAbsolut(
+        filename_txt_absolut: str = get_filename_txt_absolut(
             directory, filename_pdf
         )
 
-        writeTextLinesToFileInDir(filename_txt_absolut, text_lines)
+        write_text_lines_to_file_in_dir(filename_txt_absolut, text_lines)
 
     # create attach each pdf to an excel file going by year
 
