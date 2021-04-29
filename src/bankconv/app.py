@@ -13,6 +13,30 @@ import os
 from tika import parser
 
 
+@dataclass
+class CreditCardEntry:
+    credit_card_number: str
+    recite_day: int
+    recite_month: int
+    recite_year: int
+    booking_day: int
+    booking_month: int
+    booking_year: int
+    recite_date: str
+    booking_date: str
+    amount: float
+    currency: str
+    description: str
+
+
+class CreditCardBilling:
+    def __init__(self):
+        None
+
+    def add_billing_data(self, text_lines: List[str]):
+        print("add billing to year")
+
+
 def get_directory() -> str:
     """
     Select directory from GUI User input and return it.
@@ -47,19 +71,6 @@ def get_text_lines_from_pdf(directory: str, filename_pdf: str) -> List[str]:
     return text_lines
 
 
-def get_year_from_filename_pdf(filename_pdf: str) -> Union[int, None]:
-    """
-    Function expects a pdf file were the first 4 chars represent the year.
-    Returns Year as int or none if not valid.
-    """
-    if len(filename_pdf) < 4:
-        return None
-    year: str = filename_pdf[:4]
-    if not year.isdigit():
-        return None
-    return int(year)
-
-
 def get_filename_txt_absolut(directory: str, filename_pdf: str) -> str:
     """
     Get txt filename absolut based on pdf filename.
@@ -82,46 +93,21 @@ def write_text_lines_to_file_in_dir(
     text_file.close()
 
 
-@dataclass
-class CreditCardEntry:
-    credit_card_number: str
-    recite_day: int
-    recite_month: int
-    recite_year: int
-    booking_day: int
-    booking_month: int
-    booking_year: int
-    recite_date: str
-    booking_date: str
-    amount: float
-    currency: str
-    description: str
-
-
-class CreditCardBilling:
-    def __init__(self, year):
-        self.year = year
-
-    def add_billing_data(self, text_lines: List[str]):
-        return None
-
-
 def main():
     # iterate over all pdf files in folder
     directory: str = get_directory()
 
-    for filename_pdf in os.listdir(directory):
+    credit_card_billings: List[CreditCardBilling] = []
+
+    filenames_pdf: List[str] = os.listdir(directory)
+    filenames_pdf.sort()
+    for filename_pdf in filenames_pdf:
         if not filename_pdf.lower().endswith(".pdf"):
             continue
 
         text_lines: List[str] = get_text_lines_from_pdf(
             directory, filename_pdf
         )
-
-        year = get_year_from_filename_pdf(filename_pdf)
-        if year is None:
-            print("Invalid pdf {}".format(filename_pdf))
-            continue
 
         filename_txt_absolut: str = get_filename_txt_absolut(
             directory, filename_pdf
