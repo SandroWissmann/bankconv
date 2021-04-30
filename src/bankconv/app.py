@@ -222,8 +222,20 @@ class CreditCardBilling:
         for line_number, text_line in enumerate(
             text_lines[start_line:], start_line
         ):
-            if self._is_credit_card_entry(text_line):
-                print(text_line)
+            if not self._is_credit_card_entry(text_line):
+                continue
+
+            print(text_line)
+
+            [booking_date, recite_date] = self._get_booking_and_recite_date(
+                text_line
+            )
+
+            print(
+                "booking_date: {} recite_date: {}".format(
+                    booking_date, recite_date
+                )
+            )
 
             # last line was currency and this one has description?
             # add description
@@ -245,6 +257,18 @@ class CreditCardBilling:
             r"\d{2}.\d{2}. \d{2}.\d{2}. {2}.+\d+,\d{2}(\+|-){1}", line
         )
         return bool(match)
+
+    def _get_booking_and_recite_date(self, line: str) -> Optional[List[str]]:
+        """
+        Searches line for booking and recite date.
+        Return booking and recite date in format DD.MM. as List or None if no
+        result
+        """
+        match = re.match(r"\d{2}.\d{2}. \d{2}.\d{2}.", line)
+        if match:
+            dates = match.group(0).split()
+            assert len(dates) == 2, "booking or recite date missing"
+            return [dates[0], dates[1]]
 
 
 def get_directory() -> str:
