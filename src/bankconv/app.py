@@ -50,8 +50,7 @@ class CreditCardBilling:
             print("End date not found in file")
             return
 
-        print(index)
-        print(end_date)
+        print("{}\t{}".format(index, end_date))
 
         # iterate over text_lines until MasterCard row is found
         # extract credit card number
@@ -62,8 +61,7 @@ class CreditCardBilling:
             print("Credit card number not found in file")
             return
 
-        print(index)
-        print(credit_card_number)
+        print("{}\t{}".format(index, credit_card_number))
 
         # go two more row to in EUR
         # extract currency = Eur
@@ -72,11 +70,16 @@ class CreditCardBilling:
             print("Currency not found in file")
             return
 
-        print(index)
-        print(currency)
+        print("{}\t{}".format(index, currency))
 
         # Find Saldovortrag two more rows away.
         # extract date
+        index, start_date = self._get_start_date(text_lines, index + 1)
+        if type(start_date) is not str:
+            print("Start date not found in file")
+            return
+
+        print("{}\t{}".format(index, start_date))
 
         # while not Einzug von Kto.
 
@@ -168,6 +171,23 @@ class CreditCardBilling:
         ):
             if text_line.find("EUR") != -1:
                 return [line_number, "EUR"]
+        return None
+
+    def _get_start_date(
+        self, text_lines: List[str], start_line: int
+    ) -> Optional[List[Union[int, str]]]:
+        """
+        Search for start date in text lines
+        Returns line number and start date or none if not result
+        """
+        for line_number, text_line in enumerate(
+            text_lines[start_line:], start_line
+        ):
+            if text_line.find("Saldovortrag vom") != -1:
+                start_date = self._find_date(text_line)
+                if type(start_date) is not str:
+                    return None
+                return [line_number, start_date]
         return None
 
 
