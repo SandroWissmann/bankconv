@@ -45,13 +45,13 @@ class CreditCardBilling:
 
         # find Abrechnung / Saldenmitteilung bis zum
         # Extract date
-        index, booking_date = self._get_booking_date(text_lines)
-        if type(booking_date) is not str:
-            print("Cooking date not found in file")
+        index, end_date = self._get_end_date(text_lines)
+        if type(end_date) is not str:
+            print("End date not found in file")
             return
 
         print(index)
-        print(booking_date)
+        print(end_date)
 
         # iterate over text_lines until MasterCard row is found
         # extract credit card number
@@ -92,7 +92,7 @@ class CreditCardBilling:
         # Make Einzug von KTO
         # description booking date == recite date == saldendate
 
-    def _get_booking_date(
+    def _get_end_date(
         self, text_lines: List[str]
     ) -> Optional[List[Union[int, str]]]:
         """
@@ -101,10 +101,10 @@ class CreditCardBilling:
         """
         for line_number, text_line in enumerate(text_lines):
             if text_line.startswith("Abrechnung / Saldenmitteilung bis zum"):
-                booking_date = self._find_date(text_line)
-                if type(booking_date) is not str:
+                end_date = self._find_date(text_line)
+                if type(end_date) is not str:
                     return None
-                return [line_number, booking_date]
+                return [line_number, end_date]
         return None
 
     def _find_date(self, line: str) -> Optional[str]:
