@@ -166,7 +166,7 @@ class CreditCardBilling:
         for line_number, text_line in enumerate(
             text_lines[start_line:], start_line
         ):
-            if text_line.find("EUR") is not -1:
+            if text_line.find("EUR") != -1:
                 return [line_number, "EUR"]
         return None
 
