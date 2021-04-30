@@ -45,8 +45,7 @@ class CreditCardBilling:
 
         # find Abrechnung / Saldenmitteilung bis zum
         # Extract date
-        index: int = 0
-        index, booking_date = self._get_booking_date(text_lines, index)
+        index, booking_date = self._get_booking_date(text_lines)
         print(booking_date)
         print(index)
         if type(booking_date) is not str:
@@ -77,7 +76,7 @@ class CreditCardBilling:
         # description booking date == recite date == saldendate
 
     def _get_booking_date(
-        self, text_lines: List[str], index: int
+        self, text_lines: List[str]
     ) -> Optional[List[Union[int, str]]]:
         """
         Search for booking date in text lines
