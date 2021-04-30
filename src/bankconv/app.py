@@ -231,6 +231,8 @@ class CreditCardBilling:
                 text_line
             )
 
+            booking_date += start_year
+            recite_date += start_year
             print(
                 "booking_date: {} recite_date: {}".format(
                     booking_date, recite_date
