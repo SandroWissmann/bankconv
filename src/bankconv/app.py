@@ -96,8 +96,8 @@ class CreditCardBilling:
         self, text_lines: List[str]
     ) -> Optional[List[Union[int, str]]]:
         """
-        Search for booking date in text lines
-        Returns line number and booking date or none if not result
+        Search for end date in text lines
+        Returns line number and end date or none if not result
         """
         for line_number, text_line in enumerate(text_lines):
             if text_line.startswith("Abrechnung / Saldenmitteilung bis zum"):
