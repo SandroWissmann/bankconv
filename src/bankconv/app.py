@@ -19,15 +19,12 @@ from tika import parser
 @dataclass
 class CreditCardEntry:
     credit_card_number: str
-    booking_day: int
-    booking_month: int
-    booking_year: int
-    recite_day: int
-    recite_month: int
-    recite_year: int
+    booking_date: str  # DD.MM.YY
+    recite_date: str  # DD.MM.YY
     amount: float
-    currency: str
+    currency: str  # e.g EUR
     description: str
+    description_addition: str
 
 
 class CreditCardBilling:
@@ -81,9 +78,15 @@ class CreditCardBilling:
 
         print("{}\t{}".format(index, start_date))
 
+        start_year = self._get_year_from_date(start_date)
+
+        print(start_year)
+
         credit_card_entries: List[
             CreditCardEntry
-        ] = self._get_credit_card_entries(text_lines, index + 1)
+        ] = self._get_credit_card_entries(
+            text_lines, index + 1, credit_card_number, start_year
+        )
 
         # while not Einzug von Kto.
 
@@ -194,8 +197,19 @@ class CreditCardBilling:
                 return [line_number, start_date]
         return None
 
+    def _get_year_from_date(self, date: str) -> str:
+        """
+        Expects date in format DD.MM.YYYY.
+        Returns year in format YY.
+        """
+        return date[-2:]
+
     def _get_credit_card_entries(
-        self, text_lines: List[str], start_line: int
+        self,
+        text_lines: List[str],
+        start_line: int,
+        credit_card_number: str,
+        start_year: str,
     ) -> List[CreditCardEntry]:
         """
         Search for credit card entries in text lines
