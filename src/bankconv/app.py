@@ -237,6 +237,10 @@ class CreditCardBilling:
                 )
             )
 
+            description = self._get_description(text_line)
+
+            print(description)
+
             # last line was currency and this one has description?
             # add description
             # if not reset flag
@@ -269,6 +273,17 @@ class CreditCardBilling:
         dates = match.group(0).split()
         assert len(dates) == 2, "booking or recite date missing"
         return [dates[0], dates[1]]
+
+    def _get_description(self, line: str) -> str:
+        """
+        Searches line for description and returns it.
+        """
+        start_offset = line.rfind(".")
+        line = line[start_offset + 1 :].lstrip()
+        match = re.search(r"\d+,\d{2}(\+|-){1}", line)
+        assert match
+        line = line[: match.start()]
+        return line.rstrip()
 
 
 def get_directory() -> str:
