@@ -81,6 +81,10 @@ class CreditCardBilling:
 
         print("{}\t{}".format(index, start_date))
 
+        credit_card_entries: List[
+            CreditCardEntry
+        ] = self._get_credit_card_entries(text_lines, index + 1)
+
         # while not Einzug von Kto.
 
         # Find first row without only spaces
@@ -189,6 +193,44 @@ class CreditCardBilling:
                     return None
                 return [line_number, start_date]
         return None
+
+    def _get_credit_card_entries(
+        self, text_lines: List[str], start_line: int
+    ) -> List[CreditCardEntry]:
+        """
+        Search for credit card entries in text lines
+        Returns credit card entries
+        """
+        credit_card_entries: List[CreditCardEntry] = []
+
+        # last line was currency
+        found_entry: bool = False
+        for line_number, text_line in enumerate(
+            text_lines[start_line:], start_line
+        ):
+            if self._is_credit_card_entry(text_line):
+                print(text_line)
+
+            # last line was currency and this one has description?
+            # add description
+            # if not reset flag
+
+            # if line is credit card entry
+            # parse booking date
+            # parse recite date
+            # parse description
+            # amount
+        return credit_card_entries
+
+    def _is_credit_card_entry(self, line: str) -> bool:
+        """
+        Checks if passed line is a credit card enty in the format:
+        DD.MM. DD.MM.   Description    Amount (+ or -)
+        """
+        match = re.match(
+            r"\d{2}.\d{2}. \d{2}.\d{2}. {2}.+\d+,\d{2}(\+|-){1}", line
+        )
+        return bool(match)
 
 
 def get_directory() -> str:
