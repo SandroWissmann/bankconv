@@ -67,6 +67,13 @@ class CreditCardBilling:
 
         # go two more row to in EUR
         # extract currency = Eur
+        index, currency = self._get_currency(text_lines, index + 1)
+        if type(currency) is not str:
+            print("Currency not found in file")
+            return
+
+        print(index)
+        print(currency)
 
         # Find Saldovortrag two more rows away.
         # extract date
@@ -146,10 +153,22 @@ class CreditCardBilling:
         is in DDDD **** **** DDDD and not DDDD DDXX XXXX DDDD.
         """
         parts: List[str] = credit_card_number.split()
-
         assert len(parts) == 4, "Credit card parts should be 4"
-
         return parts[0] + " **** **** " + parts[3]
+
+    def _get_currency(
+        self, text_lines: List[str], start_line: int
+    ) -> Optional[List[Union[int, str]]]:
+        """
+        Search for currency in text lines
+        Returns line number and currency or None if not result
+        """
+        for line_number, text_line in enumerate(
+            text_lines[start_line:], start_line
+        ):
+            if text_line.find("EUR") is not -1:
+                return [line_number, "EUR"]
+        return None
 
 
 def get_directory() -> str:
