@@ -21,7 +21,7 @@ class CreditCardEntry:
     credit_card_number: str
     booking_date: str  # DD.MM.YY
     recite_date: str  # DD.MM.YY
-    amount: float
+    amount: str  # (-)D+,DD
     currency: str  # e.g EUR
     description: str
     description_addition: str
@@ -243,6 +243,10 @@ class CreditCardBilling:
 
             print(description)
 
+            amount = self._get_amount(text_line)
+
+            print(amount)
+
             # last line was currency and this one has description?
             # add description
             # if not reset flag
@@ -286,6 +290,21 @@ class CreditCardBilling:
         assert match
         line = line[: match.start()]
         return line.rstrip()
+
+    def _get_amount(self, line: str) -> str:
+        """
+        Searches line for amount in the format
+        D+,DD(+/-)
+        and returns it as
+        (-?)D+.DD
+        """
+        match = re.search(r"\d+,\d{2}(\+|-){1}", line)
+        assert match
+        amount = match.group(0)
+        last_char = amount[-1]
+        if amount[-1] == "-":
+            return "-" + amount[:-1]
+        return amount[:-1]
 
 
 def get_directory() -> str:
