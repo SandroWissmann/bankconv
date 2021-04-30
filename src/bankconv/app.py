@@ -46,14 +46,24 @@ class CreditCardBilling:
         # find Abrechnung / Saldenmitteilung bis zum
         # Extract date
         index, booking_date = self._get_booking_date(text_lines)
-        print(booking_date)
-        print(index)
         if type(booking_date) is not str:
-            print("No booking date found")
+            print("Cooking date not found in file")
             return
+
+        print(index)
+        print(booking_date)
 
         # iterate over text_lines until MasterCard row is found
         # extract credit card number
+        index, credit_card_number = self._get_credit_card_number(
+            text_lines, index + 1
+        )
+        if type(credit_card_number) is not str:
+            print("Credit card number not found in file")
+            return
+
+        print(index)
+        print(credit_card_number)
 
         # go two more row to in EUR
         # extract currency = Eur
@@ -98,6 +108,48 @@ class CreditCardBilling:
         if match:
             return match.group(0)
         return None
+
+    def _get_credit_card_number(
+        self, text_lines: List[str], start_line: int
+    ) -> Optional[List[Union[int, str]]]:
+        """
+        Search for credit_card_number in text lines
+        Returns line number and credit_card_number or None if not result
+        """
+        for line_number, text_line in enumerate(
+            text_lines[start_line:], start_line
+        ):
+            if text_line.startswith("MasterCard"):
+                credit_card_number = self._find_credit_card_number(text_line)
+                if type(credit_card_number) is not str:
+                    return None
+                credit_card_number: str = self._reformat_credit_card_number(
+                    credit_card_number
+                )
+                return [line_number, credit_card_number]
+
+    def _find_credit_card_number(self, line: str) -> Optional[str]:
+        """
+        Search line for credit card number in the format
+        DDDD DDXX XXXX DDDD.
+        """
+        match = re.search(r"\d{4} \d{2}XX XXXX \d{4}", line)
+        if match:
+            return match.group(0)
+        return None
+
+    def _reformat_credit_card_number(self, credit_card_number) -> str:
+        """
+        Reformats credit card number from Format
+        DDDD DDXX XXXX DDDD to DDDD **** **** DDDD.
+        Reason for this is that the automatic CSV export from Sparkasse
+        is in DDDD **** **** DDDD and not DDDD DDXX XXXX DDDD.
+        """
+        parts: List[str] = credit_card_number.split()
+
+        assert len(parts) == 4, "Credit card parts should be 4"
+
+        return parts[0] + " **** **** " + parts[3]
 
 
 def get_directory() -> str:
