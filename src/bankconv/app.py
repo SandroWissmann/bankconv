@@ -79,12 +79,25 @@ class CreditCardBilling:
     def _get_booking_date(
         self, text_lines: List[str], index: int
     ) -> Optional[List[Union[int, str]]]:
-        for count, text_line in enumerate(text_lines):
+        """
+        Search for booking date in text lines
+        Returns line number and booking date or none if not result
+        """
+        for line_number, text_line in enumerate(text_lines):
             if text_line.startswith("Abrechnung / Saldenmitteilung bis zum"):
-                match = re.search(r"\d{2}.\d{2}.\d{4}", text_line)
-                if not match:
+                booking_date = self._find_date(text_line)
+                if type(booking_date) is not str:
                     return None
-                return [count, match.group(0)]
+                return [line_number, booking_date]
+        return None
+
+    def _find_date(self, line: str) -> Optional[str]:
+        """
+        Search line for date in the format DD.MM.YYYY
+        """
+        match = re.search(r"\d{2}.\d{2}.\d{4}", line)
+        if match:
+            return match.group(0)
         return None
 
 
