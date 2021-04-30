@@ -258,17 +258,17 @@ class CreditCardBilling:
         )
         return bool(match)
 
-    def _get_booking_and_recite_date(self, line: str) -> Optional[List[str]]:
+    def _get_booking_and_recite_date(self, line: str) -> List[str]:
         """
         Searches line for booking and recite date.
-        Return booking and recite date in format DD.MM. as List or None if no
-        result
+        Return booking and recite date in format DD.MM. as List.
+        Assumes that line contains valid booking and recite date.
         """
         match = re.match(r"\d{2}.\d{2}. \d{2}.\d{2}.", line)
-        if match:
-            dates = match.group(0).split()
-            assert len(dates) == 2, "booking or recite date missing"
-            return [dates[0], dates[1]]
+        assert match
+        dates = match.group(0).split()
+        assert len(dates) == 2, "booking or recite date missing"
+        return [dates[0], dates[1]]
 
 
 def get_directory() -> str:
