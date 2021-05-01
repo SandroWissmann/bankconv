@@ -31,20 +31,6 @@ class CreditCardEntry:
         self.description_addition = ""
         self.amount = self._get_amount(line)
 
-    def __str__(self) -> str:
-        print_str: str = ""
-        print_str += "credit card number: {} ".format(self.credit_card_number)
-        print_str += "booking date: {} ".format(self.booking_date)
-        print_str += "recite date: {} ".format(self.recite_date)
-        print_str += "currency: {} ".format(self.currency)
-        print_str += "amount: {}\t".format(self.amount)
-        print_str += "description: {} ".format(self.description)
-        if self.description_addition != "":
-            print_str += "description addition: {} ".format(
-                self.description_addition
-            )
-        return print_str
-
     def _get_booking_and_recite_date(self, line: str) -> List[str]:
         """
         Searches line for booking and recite date.
@@ -82,6 +68,27 @@ class CreditCardEntry:
         if amount[-1] == "-":
             return "-" + amount[:-1]
         return amount[:-1]
+
+    def __repr__(self) -> str:
+        return self._get_class_presentation()
+
+    def __str__(self) -> str:
+        return self._get_class_presentation()
+
+    def _get_class_presentation(self) -> str:
+        """
+        Helper to show member of class for __str__ and __repr__
+        """
+        print_str: str = ""
+        print_str += "{} ".format(self.credit_card_number)
+        print_str += "{} ".format(self.booking_date)
+        print_str += "{} ".format(self.recite_date)
+        print_str += "{} ".format(self.currency)
+        print_str += "{}\t".format(self.amount)
+        print_str += "{} ".format(self.description)
+        if self.description_addition != "":
+            print_str += "{} ".format(self.description_addition)
+        return print_str
 
 
 class CreditCardBilling:
@@ -144,6 +151,9 @@ class CreditCardBilling:
         ] = self._get_credit_card_entries(
             text_lines, index + 1, credit_card_number, currency, start_year
         )
+
+        for credit_card_entry in credit_card_entries:
+            print(credit_card_entry)
 
         # while not Einzug von Kto.
 
@@ -280,12 +290,24 @@ class CreditCardBilling:
         for line_number, text_line in enumerate(
             text_lines[start_line:], start_line
         ):
-            if not self._is_credit_card_entry(text_line):
+            if text_line.isspace():
+                found_entry = False
                 continue
+            if not self._is_credit_card_entry(text_line):
+                if found_entry:
+                    description_addition = text_line.strip()
+                    if credit_card_entries[-1].description_addition != "":
+                        credit_card_entries[-1].description_addition += "\t"
+                    credit_card_entries[
+                        -1
+                    ].description_addition += description_addition
+                else:
+                    print("Unknown: {}".format(text_line))
+                continue
+            found_entry = True
             credit_card_entry = CreditCardEntry(
                 credit_card_number, currency, start_year, text_line
             )
-            print(credit_card_entry)
             credit_card_entries.append(credit_card_entry)
 
         return credit_card_entries
