@@ -346,7 +346,7 @@ class CreditCardBilling:
         for line_number, text_line in enumerate(
             text_lines[start_line:], start_line
         ):
-            if not text_line.find("Einzug von Kto."):
+            if text_line.find("Einzug von Kto.") == -1:
                 continue
             return CreditCardEntry(
                 credit_card_number, currency, text_line, None, end_date
