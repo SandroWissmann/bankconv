@@ -24,7 +24,7 @@ class CreditCardEntry:
     ):
         self.credit_card_number = credit_card_number
         self.currency = currency
-        [booking_date, recite_date] = self._get_booking_and_recite_date(line)
+        booking_date, recite_date = self._get_booking_and_recite_date(line)
         self.booking_date = booking_date + start_year
         self.recite_date = recite_date + start_year
         self.description = self._get_description(line)
@@ -146,11 +146,11 @@ class CreditCardBilling:
 
         print(start_year)
 
-        credit_card_entries: List[
-            CreditCardEntry
-        ] = self._get_credit_card_entries(
+        index, credit_card_entries = self._get_credit_card_entries(
             text_lines, index + 1, credit_card_number, currency, start_year
         )
+        if type(credit_card_entries) is not List[CreditCardEntry]:
+            print("No bookings for the Month found")
 
         for credit_card_entry in credit_card_entries:
             print(credit_card_entry)
@@ -278,10 +278,10 @@ class CreditCardBilling:
         credit_card_number: str,
         currency: str,
         start_year: str,
-    ) -> List[CreditCardEntry]:
+    ) -> List[Union[int, List[CreditCardEntry]]]:
         """
         Search for credit card entries in text lines
-        Returns credit card entries
+        Returns credit card entries and line_number
         """
         credit_card_entries: List[CreditCardEntry] = []
 
@@ -290,6 +290,8 @@ class CreditCardBilling:
         for line_number, text_line in enumerate(
             text_lines[start_line:], start_line
         ):
+            if self._is_end_of_booking_line(text_line):
+                break
             if text_line.isspace():
                 found_entry = False
                 continue
@@ -310,7 +312,13 @@ class CreditCardBilling:
             )
             credit_card_entries.append(credit_card_entry)
 
-        return credit_card_entries
+        return [line_number, credit_card_entries]
+
+    def _is_end_of_booking_line(self, line: str) -> bool:
+        """
+        Returns true if end of booking line is found
+        """
+        return line.endswith("--------------")
 
     def _is_credit_card_entry(self, line: str) -> bool:
         """
