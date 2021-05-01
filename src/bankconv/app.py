@@ -152,6 +152,7 @@ class CreditCardBilling:
         if type(credit_card_entries) is not List[CreditCardEntry]:
             print("No bookings for the Month found")
 
+        print(index)
         for credit_card_entry in credit_card_entries:
             print(credit_card_entry)
 
@@ -318,7 +319,7 @@ class CreditCardBilling:
         """
         Returns true if end of booking line is found
         """
-        return line.endswith("--------------")
+        return line.lstrip().startswith("--------------")
 
     def _is_credit_card_entry(self, line: str) -> bool:
         """
