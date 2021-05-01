@@ -52,13 +52,13 @@ class CreditCardEntry:
         """
         Searches line for description and returns it.
         """
-        start_offset = line.rfind(".")
-        line = line[start_offset + 1 :].lstrip()
+        date_match = re.match(r"\d{2}.\d{2}. \d{2}.\d{2}.", line)
+        if date_match:
+            line = line[date_match.end() :]
+        line = line.lstrip()
+
         match = re.search(r"\d{1,3}(.\d{3})*,\d{2}(\+|-){1}", line)
-        if match:
-            line = line[: match.start()]
-        else:
-            line.lstrip()
+        line = line[: match.start()]
         return line.rstrip()
 
     def _get_amount(self, line: str) -> str:
