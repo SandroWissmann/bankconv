@@ -4,8 +4,6 @@ from typing import List
 from typing import Union
 from typing import Optional
 
-from dataclasses import dataclass
-
 import re
 
 import tkinter as tk
@@ -16,15 +14,74 @@ import os
 from tika import parser
 
 
-@dataclass
 class CreditCardEntry:
-    credit_card_number: str
-    booking_date: str  # DD.MM.YY
-    recite_date: str  # DD.MM.YY
-    amount: str  # (-)D+,DD
-    currency: str  # e.g EUR
-    description: str
-    description_addition: str
+    def __init__(
+        self,
+        credit_card_number: str,
+        currency: str,
+        start_year: str,
+        line: str,
+    ):
+        self.credit_card_number = credit_card_number
+        self.currency = currency
+        [booking_date, recite_date] = self._get_booking_and_recite_date(line)
+        self.booking_date = booking_date + start_year
+        self.recite_date = recite_date + start_year
+        self.description = self._get_description(line)
+        self.description_addition = ""
+        self.amount = self._get_amount(line)
+
+    def __str__(self) -> str:
+        print_str: str = ""
+        print_str += "credit card number: {} ".format(self.credit_card_number)
+        print_str += "booking date: {} ".format(self.booking_date)
+        print_str += "recite date: {} ".format(self.recite_date)
+        print_str += "currency: {} ".format(self.currency)
+        print_str += "amount: {}\t".format(self.amount)
+        print_str += "description: {} ".format(self.description)
+        if self.description_addition != "":
+            print_str += "description addition: {} ".format(
+                self.description_addition
+            )
+        return print_str
+
+    def _get_booking_and_recite_date(self, line: str) -> List[str]:
+        """
+        Searches line for booking and recite date.
+        Return booking and recite date in format DD.MM. as List.
+        Assumes that line contains valid booking and recite date.
+        """
+        match = re.match(r"\d{2}.\d{2}. \d{2}.\d{2}.", line)
+        assert match
+        dates = match.group(0).split()
+        assert len(dates) == 2, "booking or recite date missing"
+        return [dates[0], dates[1]]
+
+    def _get_description(self, line: str) -> str:
+        """
+        Searches line for description and returns it.
+        """
+        start_offset = line.rfind(".")
+        line = line[start_offset + 1 :].lstrip()
+        match = re.search(r"\d+,\d{2}(\+|-){1}", line)
+        assert match
+        line = line[: match.start()]
+        return line.rstrip()
+
+    def _get_amount(self, line: str) -> str:
+        """
+        Searches line for amount in the format
+        D+,DD(+/-)
+        and returns it as
+        (-?)D+.DD
+        """
+        match = re.search(r"\d+,\d{2}(\+|-){1}", line)
+        assert match
+        amount = match.group(0)
+        last_char = amount[-1]
+        if amount[-1] == "-":
+            return "-" + amount[:-1]
+        return amount[:-1]
 
 
 class CreditCardBilling:
@@ -85,7 +142,7 @@ class CreditCardBilling:
         credit_card_entries: List[
             CreditCardEntry
         ] = self._get_credit_card_entries(
-            text_lines, index + 1, credit_card_number, start_year
+            text_lines, index + 1, credit_card_number, currency, start_year
         )
 
         # while not Einzug von Kto.
@@ -209,6 +266,7 @@ class CreditCardBilling:
         text_lines: List[str],
         start_line: int,
         credit_card_number: str,
+        currency: str,
         start_year: str,
     ) -> List[CreditCardEntry]:
         """
@@ -224,38 +282,12 @@ class CreditCardBilling:
         ):
             if not self._is_credit_card_entry(text_line):
                 continue
-
-            print(text_line)
-
-            [booking_date, recite_date] = self._get_booking_and_recite_date(
-                text_line
+            credit_card_entry = CreditCardEntry(
+                credit_card_number, currency, start_year, text_line
             )
+            print(credit_card_entry)
+            credit_card_entries.append(credit_card_entry)
 
-            booking_date += start_year
-            recite_date += start_year
-            print(
-                "booking_date: {} recite_date: {}".format(
-                    booking_date, recite_date
-                )
-            )
-
-            description = self._get_description(text_line)
-
-            print(description)
-
-            amount = self._get_amount(text_line)
-
-            print(amount)
-
-            # last line was currency and this one has description?
-            # add description
-            # if not reset flag
-
-            # if line is credit card entry
-            # parse booking date
-            # parse recite date
-            # parse description
-            # amount
         return credit_card_entries
 
     def _is_credit_card_entry(self, line: str) -> bool:
@@ -267,44 +299,6 @@ class CreditCardBilling:
             r"\d{2}.\d{2}. \d{2}.\d{2}. {2}.+\d+,\d{2}(\+|-){1}", line
         )
         return bool(match)
-
-    def _get_booking_and_recite_date(self, line: str) -> List[str]:
-        """
-        Searches line for booking and recite date.
-        Return booking and recite date in format DD.MM. as List.
-        Assumes that line contains valid booking and recite date.
-        """
-        match = re.match(r"\d{2}.\d{2}. \d{2}.\d{2}.", line)
-        assert match
-        dates = match.group(0).split()
-        assert len(dates) == 2, "booking or recite date missing"
-        return [dates[0], dates[1]]
-
-    def _get_description(self, line: str) -> str:
-        """
-        Searches line for description and returns it.
-        """
-        start_offset = line.rfind(".")
-        line = line[start_offset + 1 :].lstrip()
-        match = re.search(r"\d+,\d{2}(\+|-){1}", line)
-        assert match
-        line = line[: match.start()]
-        return line.rstrip()
-
-    def _get_amount(self, line: str) -> str:
-        """
-        Searches line for amount in the format
-        D+,DD(+/-)
-        and returns it as
-        (-?)D+.DD
-        """
-        match = re.search(r"\d+,\d{2}(\+|-){1}", line)
-        assert match
-        amount = match.group(0)
-        last_char = amount[-1]
-        if amount[-1] == "-":
-            return "-" + amount[:-1]
-        return amount[:-1]
 
 
 def get_directory() -> str:
