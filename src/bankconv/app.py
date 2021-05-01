@@ -30,8 +30,8 @@ class CreditCardEntry:
             self.booking_date = booking_date + start_year
             self.recite_date = recite_date + start_year
         else:
-            self.booking_date = end_date
-            self.recite_date = end_date
+            self.booking_date = end_date[:-4] + end_date[-2:]
+            self.recite_date = self.booking_date
         self.description = self._get_description(line)
         self.description_addition = ""
         self.amount = self._get_amount(line)
