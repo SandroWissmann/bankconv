@@ -19,14 +19,19 @@ class CreditCardEntry:
         self,
         credit_card_number: str,
         currency: str,
-        start_year: str,
         line: str,
+        start_year: str = None,  # None or str
+        end_date: str = None,  # None or str
     ):
         self.credit_card_number = credit_card_number
         self.currency = currency
-        booking_date, recite_date = self._get_booking_and_recite_date(line)
-        self.booking_date = booking_date + start_year
-        self.recite_date = recite_date + start_year
+        if end_date is None:
+            booking_date, recite_date = self._get_booking_and_recite_date(line)
+            self.booking_date = booking_date + start_year
+            self.recite_date = recite_date + start_year
+        else:
+            self.booking_date = end_date
+            self.recite_date = end_date
         self.description = self._get_description(line)
         self.description_addition = ""
         self.amount = self._get_amount(line)
@@ -50,8 +55,10 @@ class CreditCardEntry:
         start_offset = line.rfind(".")
         line = line[start_offset + 1 :].lstrip()
         match = re.search(r"\d+,\d{2}(\+|-){1}", line)
-        assert match
-        line = line[: match.start()]
+        if match:
+            line = line[: match.start()]
+        else:
+            line.lstrip()
         return line.rstrip()
 
     def _get_amount(self, line: str) -> str:
@@ -62,7 +69,7 @@ class CreditCardEntry:
         (-?)D+.DD
         """
         match = re.search(r"\d+,\d{2}(\+|-){1}", line)
-        assert match
+        assert match, "line: {}".format(line)
         amount = match.group(0)
         last_char = amount[-1]
         if amount[-1] == "-":
@@ -155,6 +162,15 @@ class CreditCardBilling:
         print(index)
         for credit_card_entry in credit_card_entries:
             print(credit_card_entry)
+
+        credit_card_compensation = self._get_credit_card_compensation(
+            text_lines, index + 1, credit_card_number, currency, end_date
+        )
+        if type(credit_card_compensation) is not CreditCardEntry:
+            print("No compensation found")
+            return
+
+        print(credit_card_compensation)
 
         # while not Einzug von Kto.
 
@@ -309,11 +325,33 @@ class CreditCardBilling:
                 continue
             found_entry = True
             credit_card_entry = CreditCardEntry(
-                credit_card_number, currency, start_year, text_line
+                credit_card_number, currency, text_line, start_year, None
             )
             credit_card_entries.append(credit_card_entry)
 
         return [line_number, credit_card_entries]
+
+    def _get_credit_card_compensation(
+        self,
+        text_lines: List[str],
+        start_line: int,
+        credit_card_number: str,
+        currency: str,
+        end_date: str,
+    ) -> Optional[CreditCardEntry]:
+        """
+        Searches text lines for special credit card entry after the normal
+        entries which represents the compensation of the credit card.
+        """
+        for line_number, text_line in enumerate(
+            text_lines[start_line:], start_line
+        ):
+            if not text_line.find("Einzug von Kto."):
+                continue
+            return CreditCardEntry(
+                credit_card_number, currency, text_line, None, end_date
+            )
+        return None
 
     def _is_end_of_booking_line(self, line: str) -> bool:
         """
