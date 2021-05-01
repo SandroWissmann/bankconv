@@ -54,7 +54,7 @@ class CreditCardEntry:
         """
         start_offset = line.rfind(".")
         line = line[start_offset + 1 :].lstrip()
-        match = re.search(r"\d+,\d{2}(\+|-){1}", line)
+        match = re.search(r"\d{1,3}(.\d{3})*,\d{2}(\+|-){1}", line)
         if match:
             line = line[: match.start()]
         else:
@@ -68,7 +68,7 @@ class CreditCardEntry:
         and returns it as
         (-?)D+.DD
         """
-        match = re.search(r"\d+,\d{2}(\+|-){1}", line)
+        match = re.search(r"\d{1,3}(.\d{3})*,\d{2}(\+|-){1}", line)
         assert match, "line: {}".format(line)
         amount = match.group(0)
         last_char = amount[-1]
@@ -365,7 +365,8 @@ class CreditCardBilling:
         DD.MM. DD.MM.   Description    Amount (+ or -)
         """
         match = re.match(
-            r"\d{2}.\d{2}. \d{2}.\d{2}. {2}.+\d+,\d{2}(\+|-){1}", line
+            r"\d{2}.\d{2}. \d{2}.\d{2}. {2}.+\d{1,3}(.\d{3})*,\d{2}(\+|-){1}",
+            line,
         )
         return bool(match)
 
