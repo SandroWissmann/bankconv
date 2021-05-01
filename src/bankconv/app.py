@@ -111,54 +111,38 @@ class CreditCardBilling:
     ) -> Union[None, List[CreditCardEntry]]:
         None
 
-        # find Abrechnung / Saldenmitteilung bis zum
-        # Extract date
         index, end_date = self._get_end_date(text_lines)
         if type(end_date) is not str:
             print("End date not found in file")
             return
-
         print("{}\t{}".format(index, end_date))
 
-        # iterate over text_lines until MasterCard row is found
-        # extract credit card number
         index, credit_card_number = self._get_credit_card_number(
             text_lines, index + 1
         )
         if type(credit_card_number) is not str:
             print("Credit card number not found in file")
             return
-
         print("{}\t{}".format(index, credit_card_number))
 
-        # go two more row to in EUR
-        # extract currency = Eur
         index, currency = self._get_currency(text_lines, index + 1)
         if type(currency) is not str:
             print("Currency not found in file")
             return
-
         print("{}\t{}".format(index, currency))
 
-        # Find Saldovortrag two more rows away.
-        # extract date
         index, start_date = self._get_start_date(text_lines, index + 1)
         if type(start_date) is not str:
             print("Start date not found in file")
             return
-
         print("{}\t{}".format(index, start_date))
 
         start_year = self._get_year_from_date(start_date)
-
         print(start_year)
 
         index, credit_card_entries = self._get_credit_card_entries(
             text_lines, index + 1, credit_card_number, currency, start_year
         )
-        if type(credit_card_entries) is not List[CreditCardEntry]:
-            print("No bookings for the Month found")
-
         print(index)
         for credit_card_entry in credit_card_entries:
             print(credit_card_entry)
@@ -171,20 +155,6 @@ class CreditCardBilling:
             return
 
         print(credit_card_compensation)
-
-        # while not Einzug von Kto.
-
-        # Find first row without only spaces
-        # extract booking date
-        # extract recite date
-        # extract description
-        # extract amount
-
-        # while next rows not contain only spaces
-        # attach row content to description
-
-        # Make Einzug von KTO
-        # description booking date == recite date == saldendate
 
     def _get_end_date(
         self, text_lines: List[str]
@@ -302,7 +272,6 @@ class CreditCardBilling:
         """
         credit_card_entries: List[CreditCardEntry] = []
 
-        # last line was currency
         found_entry: bool = False
         for line_number, text_line in enumerate(
             text_lines[start_line:], start_line
@@ -428,7 +397,6 @@ def write_text_lines_to_file_in_dir(
 
 
 def main():
-    # iterate over all pdf files in folder
     directory: str = get_directory()
 
     credit_card_billing: CreditCardBilling = CreditCardBilling()
@@ -451,8 +419,6 @@ def main():
 
         write_text_lines_to_file_in_dir(filename_txt_absolut, text_lines)
         break
-
-    # create attach each pdf to an excel file going by year
 
 
 if __name__ == "__main__":
