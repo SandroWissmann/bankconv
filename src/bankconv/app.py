@@ -90,7 +90,7 @@ class CreditCardEntry:
         print_str += "{} ".format(self.credit_card_number)
         print_str += "{} ".format(self.booking_date)
         print_str += "{} ".format(self.recite_date)
-        print_str += "{} ".format(self.currency)
+        print_str += "{}\t".format(self.currency)
         print_str += "{}\t".format(self.amount)
         print_str += "{} ".format(self.description)
         if self.description_addition != "":
@@ -104,7 +104,6 @@ class CreditCardBilling:
 
     def add_monthly_billing_data(self, text_lines: List[str]):
         self._extract_data_from_text_lines(text_lines)
-        print("add billing to year")
 
     def _extract_data_from_text_lines(
         self, text_lines: List[str]
@@ -112,29 +111,38 @@ class CreditCardBilling:
         None
 
         index, end_date = self._get_end_date(text_lines)
-        if type(end_date) is not str:
+        if end_date is None:
             print("End date not found in file")
             return
         print("{}\t{}".format(index, end_date))
 
-        index, credit_card_number = self._get_credit_card_number(
+        index_credit_card_number_list = []
+        index_credit_card_number_list = self._get_credit_card_number(
             text_lines, index + 1
         )
-        if type(credit_card_number) is not str:
+        if index_credit_card_number_list is None:
             print("Credit card number not found in file")
             return
+        index = index_credit_card_number_list[0]
+        credit_card_number = index_credit_card_number_list[1]
         print("{}\t{}".format(index, credit_card_number))
 
-        index, currency = self._get_currency(text_lines, index + 1)
-        if type(currency) is not str:
+        index_currency_list = []
+        index_currency_list = self._get_currency(text_lines, index + 1)
+        if index_currency_list is None:
             print("Currency not found in file")
             return
+        index = index_currency_list[0]
+        currency = index_currency_list[1]
         print("{}\t{}".format(index, currency))
 
-        index, start_date = self._get_start_date(text_lines, index + 1)
-        if type(start_date) is not str:
+        index_start_date_list = []
+        index_start_date_list = self._get_start_date(text_lines, index + 1)
+        if index_start_date_list is None:
             print("Start date not found in file")
             return
+        index = index_start_date_list[0]
+        start_date = index_start_date_list[1]
         print("{}\t{}".format(index, start_date))
 
         start_year = self._get_year_from_date(start_date)
@@ -143,14 +151,13 @@ class CreditCardBilling:
         index, credit_card_entries = self._get_credit_card_entries(
             text_lines, index + 1, credit_card_number, currency, start_year
         )
-        print(index)
         for credit_card_entry in credit_card_entries:
             print(credit_card_entry)
 
         credit_card_compensation = self._get_credit_card_compensation(
             text_lines, index + 1, credit_card_number, currency, end_date
         )
-        if type(credit_card_compensation) is not CreditCardEntry:
+        if credit_card_compensation is None:
             print("No compensation found")
             return
 
@@ -418,7 +425,6 @@ def main():
         )
 
         write_text_lines_to_file_in_dir(filename_txt_absolut, text_lines)
-        break
 
 
 if __name__ == "__main__":
