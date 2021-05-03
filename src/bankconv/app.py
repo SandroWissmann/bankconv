@@ -197,14 +197,18 @@ class CreditCardBilling:
         for line_number, text_line in enumerate(
             text_lines[start_line:], start_line
         ):
-            if text_line.startswith("MasterCard"):
-                credit_card_number = self._find_credit_card_number(text_line)
-                if type(credit_card_number) is not str:
-                    return None
-                credit_card_number: str = self._reformat_credit_card_number(
-                    credit_card_number
-                )
-                return [line_number, credit_card_number]
+            if not text_line.startswith(
+                "MasterCard"
+            ) and not text_line.startswith("Mastercard"):
+                continue
+
+            credit_card_number = self._find_credit_card_number(text_line)
+            if type(credit_card_number) is not str:
+                return None
+            credit_card_number: str = self._reformat_credit_card_number(
+                credit_card_number
+            )
+            return [line_number, credit_card_number]
 
     def _find_credit_card_number(self, line: str) -> Optional[str]:
         """
