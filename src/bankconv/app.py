@@ -13,6 +13,8 @@ import os
 
 from tika import parser
 
+import csv
+
 
 class CreditCardEntry:
     def __init__(
@@ -161,7 +163,56 @@ class CreditCardBilling:
             print("No compensation found")
             return
 
-        print(credit_card_compensation)
+        self.credit_card_entries += credit_card_entries
+        self.credit_card_entries.append(credit_card_compensation)
+
+        print("In class entries:\n")
+        for credit_card_entry in self.credit_card_entries:
+            print(credit_card_entry)
+
+    def write_to_directory(self, directory: str):
+        """
+        Writes credit card entries to directory as CSV.
+        """
+
+        filename_absolute: str = os.path.join(
+            directory, "credit_card_entries.csv"
+        )
+
+        with open(filename_absolute, mode="w") as credit_card_entries_file:
+            writer = csv.writer(
+                credit_card_entries_file,
+                delimiter=",",
+                quotechar='"',
+                quoting=csv.QUOTE_MINIMAL,
+            )
+
+            # writes the with same descriptions as export from
+            # sparkasse so skrooge works directly with it
+            writer.writerow(
+                [
+                    "Umsatz get�tigt von",  # credit card number
+                    "Belegdatum",  # recite date
+                    "Buchungsdatum",  # booking date
+                    "Originalw�hrung",  # currency
+                    "Buchungsbetrag",  # amount
+                    "Transaktionsbeschreibung",  # description
+                    "Transaktionsbeschreibung Zusatz",  # description addition
+                ]
+            )
+
+            for credit_card_entry in self.credit_card_entries:
+                writer.writerow(
+                    [
+                        credit_card_entry.credit_card_number,
+                        credit_card_entry.recite_date,
+                        credit_card_entry.booking_date,
+                        credit_card_entry.currency,
+                        credit_card_entry.amount,
+                        credit_card_entry.description,
+                        credit_card_entry.description_addition,
+                    ]
+                )
 
     def _get_end_date(
         self, text_lines: List[str]
@@ -385,22 +436,22 @@ def get_text_lines_from_pdf(directory: str, filename_pdf: str) -> List[str]:
     return text_lines
 
 
-def get_filename_txt_absolut(directory: str, filename_pdf: str) -> str:
+def get_filename_txt_absolute(directory: str, filename_pdf: str) -> str:
     """
-    Get txt filename absolut based on pdf filename.
+    Get txt filename absolute based on pdf filename.
     """
     filename_txt: str = os.path.splitext(filename_pdf)[0] + ".txt"
-    filename_txt_absolut: str = os.path.join(directory, filename_txt)
-    return filename_txt_absolut
+    filename_txt_absolute: str = os.path.join(directory, filename_txt)
+    return filename_txt_absolute
 
 
 def write_text_lines_to_file_in_dir(
-    filename_txt_absolut: str, text_lines: List[str]
+    filename_txt_absolute: str, text_lines: List[str]
 ) -> None:
     """
     Write text lines to file.
     """
-    text_file: file = open(filename_txt_absolut, "w")
+    text_file: file = open(filename_txt_absolute, "w")
     for text_line in text_lines:
         text_file.write(text_line)
         text_file.write("\n")
@@ -424,11 +475,13 @@ def main():
 
         credit_card_billing.add_monthly_billing_data(text_lines)
 
-        filename_txt_absolut: str = get_filename_txt_absolut(
+        filename_txt_absolute: str = get_filename_txt_absolute(
             directory, filename_pdf
         )
 
-        write_text_lines_to_file_in_dir(filename_txt_absolut, text_lines)
+        write_text_lines_to_file_in_dir(filename_txt_absolute, text_lines)
+
+    credit_card_billing.write_to_directory(directory)
 
 
 if __name__ == "__main__":
