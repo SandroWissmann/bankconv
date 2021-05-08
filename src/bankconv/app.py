@@ -45,10 +45,6 @@ def main():
             directory, filename_pdf
         )
 
-        pdf_parser.write_text_lines_to_file_in_dir(
-            filename_txt_absolute, text_lines
-        )
-
     credit_card_billing.write_to_directory(directory)
 
 

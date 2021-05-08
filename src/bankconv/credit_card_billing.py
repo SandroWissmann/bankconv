@@ -25,7 +25,6 @@ class CreditCardBilling:
         if end_date is None:
             print("End date not found in file")
             return
-        print("{}\t{}".format(index, end_date))
 
         index_credit_card_number_list = []
         index_credit_card_number_list = self._get_credit_card_number(
@@ -36,7 +35,6 @@ class CreditCardBilling:
             return
         index = index_credit_card_number_list[0]
         credit_card_number = index_credit_card_number_list[1]
-        print("{}\t{}".format(index, credit_card_number))
 
         index_currency_list = []
         index_currency_list = self._get_currency(text_lines, index + 1)
@@ -45,7 +43,6 @@ class CreditCardBilling:
             return
         index = index_currency_list[0]
         currency = index_currency_list[1]
-        print("{}\t{}".format(index, currency))
 
         index_start_date_list = []
         index_start_date_list = self._get_start_date(text_lines, index + 1)
@@ -54,16 +51,12 @@ class CreditCardBilling:
             return
         index = index_start_date_list[0]
         start_date = index_start_date_list[1]
-        print("{}\t{}".format(index, start_date))
 
         start_year = self._get_year_from_date(start_date)
-        print(start_year)
 
         index, credit_card_entries = self._get_credit_card_entries(
             text_lines, index + 1, credit_card_number, currency, start_year
         )
-        for credit_card_entry in credit_card_entries:
-            print(credit_card_entry)
 
         credit_card_compensation = self._get_credit_card_compensation(
             text_lines, index + 1, credit_card_number, currency, end_date
@@ -74,10 +67,6 @@ class CreditCardBilling:
 
         self.credit_card_entries += credit_card_entries
         self.credit_card_entries.append(credit_card_compensation)
-
-        print("In class entries:\n")
-        for credit_card_entry in self.credit_card_entries:
-            print(credit_card_entry)
 
     def write_to_directory(self, directory: str):
         """
