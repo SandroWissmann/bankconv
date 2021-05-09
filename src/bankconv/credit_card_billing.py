@@ -57,13 +57,13 @@ class CreditCardBilling:
         credit_card_compensation = self._get_credit_card_compensation(
             text_lines, index + 1, credit_card_number, currency, end_date
         )
-        if credit_card_compensation is None:
-            print("Error: No compensation found")
-            return False
-
         self.credit_card_entries += credit_card_entries
 
-        self.credit_card_entries.append(credit_card_compensation)
+        # if credit card is positive after all bookings a positive compensation
+        # is already stated as the last credit card entry. Then no special case
+        # compensation is found
+        if credit_card_compensation is not None:
+            self.credit_card_entries.append(credit_card_compensation)
         return True
 
     def write_to_directory(self, directory: str):
