@@ -13,42 +13,35 @@ class CreditCardBilling:
     def __init__(self):
         self.credit_card_entries: List[CreditCardEntry] = []
 
-    def add_monthly_billing_data(self, text_lines: List[str]):
-        self._extract_data_from_text_lines(text_lines)
-
-    def _extract_data_from_text_lines(
-        self, text_lines: List[str]
-    ) -> Union[None, List[CreditCardEntry]]:
-        None
-
+    def add_monthly_billing_data(self, text_lines: List[str]) -> bool:
         index, end_date = self._get_end_date(text_lines)
         if end_date is None:
-            print("End date not found in file")
-            return
+            print("Error: End date not found in file")
+            return False
 
         index_credit_card_number_list = []
         index_credit_card_number_list = self._get_credit_card_number(
             text_lines, index + 1
         )
         if index_credit_card_number_list is None:
-            print("Credit card number not found in file")
-            return
+            print("Error: Credit card number not found in file")
+            return False
         index = index_credit_card_number_list[0]
         credit_card_number = index_credit_card_number_list[1]
 
         index_currency_list = []
         index_currency_list = self._get_currency(text_lines, index + 1)
         if index_currency_list is None:
-            print("Currency not found in file")
-            return
+            print("Error: Currency not found in file")
+            return False
         index = index_currency_list[0]
         currency = index_currency_list[1]
 
         index_start_date_list = []
         index_start_date_list = self._get_start_date(text_lines, index + 1)
         if index_start_date_list is None:
-            print("Start date not found in file")
-            return
+            print("Error: Start date not found in file")
+            return False
         index = index_start_date_list[0]
         start_date = index_start_date_list[1]
 
@@ -62,8 +55,8 @@ class CreditCardBilling:
             text_lines, index + 1, credit_card_number, currency, end_date
         )
         if credit_card_compensation is None:
-            print("No compensation found")
-            return
+            print("Error: No compensation found")
+            return False
 
         self.credit_card_entries += credit_card_entries
         self.credit_card_entries.append(credit_card_compensation)
