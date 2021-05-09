@@ -6,6 +6,8 @@ from typing import List
 
 import re
 
+from bankconv.date import Date
+
 
 class CreditCardEntry:
     def __init__(
@@ -19,19 +21,21 @@ class CreditCardEntry:
         self.credit_card_number = credit_card_number
         self.currency = currency
         if end_date is None:
-            booking_date, recite_date = self._get_booking_and_recite_date(line)
-            self.booking_date = booking_date + start_year
-            self.recite_date = recite_date + start_year
+            booking_date, recite_date = self._get_booking_and_recite_day_month(
+                line
+            )
+            self.booking_date = Date(booking_date + start_year)
+            self.recite_date = Date(recite_date + start_year)
         else:
-            self.booking_date = end_date[:-4] + end_date[-2:]
+            self.booking_date = end_date
             self.recite_date = self.booking_date
         self.description = self._get_description(line)
         self.description_addition = ""
         self.amount = self._get_amount(line)
 
-    def _get_booking_and_recite_date(self, line: str) -> List[str]:
+    def _get_booking_and_recite_day_month(self, line: str) -> List[str]:
         """
-        Searches line for booking and recite date.
+        Searches line for booking and recite day month.
         Return booking and recite date in format DD.MM. as List.
         Assumes that line contains valid booking and recite date.
         """

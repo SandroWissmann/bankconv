@@ -7,6 +7,7 @@ import re
 import csv
 
 from bankconv.credit_card_entry import CreditCardEntry
+from bankconv.date import Date
 
 
 class CreditCardBilling:
@@ -47,7 +48,7 @@ class CreditCardBilling:
         index = index_start_date_list[0]
         start_date = index_start_date_list[1]
 
-        start_year = self._get_year_from_date(start_date)
+        start_year = start_date.year
 
         index, credit_card_entries = self._get_credit_card_entries(
             text_lines, index + 1, credit_card_number, currency, start_year
@@ -110,7 +111,7 @@ class CreditCardBilling:
 
     def _get_end_date(
         self, text_lines: List[str]
-    ) -> Optional[List[Union[int, str]]]:
+    ) -> Optional[List[Union[int, Date]]]:
         """
         Search for end date in text lines
         Returns line number and end date or none if not result
@@ -118,18 +119,18 @@ class CreditCardBilling:
         for line_number, text_line in enumerate(text_lines):
             if text_line.startswith("Abrechnung / Saldenmitteilung bis zum"):
                 end_date = self._find_date(text_line)
-                if type(end_date) is not str:
+                if type(end_date) is not Date:
                     return None
                 return [line_number, end_date]
         return None
 
-    def _find_date(self, line: str) -> Optional[str]:
+    def _find_date(self, line: str) -> Optional[Date]:
         """
         Search line for date in the format DD.MM.YYYY
         """
         match = re.search(r"\d{2}.\d{2}.\d{4}", line)
         if match:
-            return match.group(0)
+            return Date(match.group(0))
         return None
 
     def _get_credit_card_number(
@@ -191,8 +192,8 @@ class CreditCardBilling:
         return None
 
     def _get_start_date(
-        self, text_lines: List[str], start_line: int, end_date: str
-    ) -> Optional[List[Union[int, str]]]:
+        self, text_lines: List[str], start_line: int, end_date: Date
+    ) -> Optional[List[Union[int, Date]]]:
         """
         Search for start date in text lines
         Returns line number and start date or none if not result
@@ -202,22 +203,15 @@ class CreditCardBilling:
         ):
             if text_line.find("Saldovortrag vom") != -1:
                 start_date = self._find_date(text_line)
-                if type(start_date) is not str:
+                if type(start_date) is not Date:
                     return None
                 return [line_number, start_date]
             # this is a hack. In one file from Sparkasse the date was missing
             # so we assume it is end date - 1 month
             if text_line.find("Saldovortrag") != -1:
-                # 
-
+                #
+                None
         return None
-
-    def _get_year_from_date(self, date: str) -> str:
-        """
-        Expects date in format DD.MM.YYYY.
-        Returns year in format YY.
-        """
-        return date[-2:]
 
     def _get_credit_card_entries(
         self,
