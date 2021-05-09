@@ -48,10 +48,8 @@ class CreditCardBilling:
         index = index_start_date_list[0]
         start_date = index_start_date_list[1]
 
-        start_year = start_date.year
-
         index, credit_card_entries = self._get_credit_card_entries(
-            text_lines, index + 1, credit_card_number, currency, start_year
+            text_lines, index + 1, credit_card_number, currency, start_date
         )
 
         credit_card_compensation = self._get_credit_card_compensation(
@@ -221,7 +219,7 @@ class CreditCardBilling:
         start_line: int,
         credit_card_number: str,
         currency: str,
-        start_year: str,
+        start_date: Date,
     ) -> List[Union[int, List[CreditCardEntry]]]:
         """
         Search for credit card entries in text lines
@@ -251,7 +249,7 @@ class CreditCardBilling:
                 continue
             found_entry = True
             credit_card_entry = CreditCardEntry(
-                credit_card_number, currency, text_line, start_year, None
+                credit_card_number, currency, text_line, start_date, None
             )
             credit_card_entries.append(credit_card_entry)
 
@@ -263,7 +261,7 @@ class CreditCardBilling:
         start_line: int,
         credit_card_number: str,
         currency: str,
-        end_date: str,
+        end_date: Date,
     ) -> Optional[CreditCardEntry]:
         """
         Searches text lines for special credit card entry after the normal

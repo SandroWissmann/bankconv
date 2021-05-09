@@ -15,17 +15,19 @@ class CreditCardEntry:
         credit_card_number: str,
         currency: str,
         line: str,
-        start_year: str = None,  # None or str
-        end_date: str = None,  # None or str
+        start_date: Date = None,  # None or str
+        end_date: Date = None,  # None or str
     ):
         self.credit_card_number = credit_card_number
         self.currency = currency
         if end_date is None:
-            booking_date, recite_date = self._get_booking_and_recite_day_month(
-                line
-            )
-            self.booking_date = Date(booking_date + start_year)
-            self.recite_date = Date(recite_date + start_year)
+            (
+                booking_day_month,
+                recite_day_month,
+            ) = self._get_booking_and_recite_day_month(line)
+
+            self.booking_date = self._make_date(booking_day_month, start_date)
+            self.recite_date = self._make_date(recite_day_month, start_date)
         else:
             self.booking_date = end_date
             self.recite_date = self.booking_date
@@ -44,6 +46,18 @@ class CreditCardEntry:
         dates = match.group(0).split()
         assert len(dates) == 2, "booking or recite date missing"
         return [dates[0], dates[1]]
+
+    def _get_month(self, day_month: str):
+        """
+        Extract Month from day month in format DD.MM.
+        """
+        return day_month[-3:-1]
+
+    def _make_date(self, day_month: str, start_date: Date) -> Date:
+        year = start_date.year
+        if start_date.month == "12" and self._get_month(day_month) == "01":
+            year = str(int(year) + 1)
+        return Date(day_month + year)
 
     def _get_description(self, line: str) -> str:
         """
