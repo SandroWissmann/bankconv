@@ -39,7 +39,8 @@ def main():
             directory, filename_pdf
         )
 
-        credit_card_billing.add_monthly_billing_data(text_lines)
+        if not credit_card_billing.add_monthly_billing_data(text_lines):
+            print("File: {}".format(filename_pdf))
 
         filename_txt_absolute: str = pdf_parser.get_filename_txt_absolute(
             directory, filename_pdf

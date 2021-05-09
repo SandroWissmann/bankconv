@@ -60,6 +60,7 @@ class CreditCardBilling:
 
         self.credit_card_entries += credit_card_entries
         self.credit_card_entries.append(credit_card_compensation)
+        return True
 
     def write_to_directory(self, directory: str):
         """
