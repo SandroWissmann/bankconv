@@ -62,6 +62,7 @@ class CreditCardBilling:
             return False
 
         self.credit_card_entries += credit_card_entries
+
         self.credit_card_entries.append(credit_card_compensation)
         return True
 
@@ -209,8 +210,9 @@ class CreditCardBilling:
             # this is a hack. In one file from Sparkasse the date was missing
             # so we assume it is end date - 1 month
             if text_line.find("Saldovortrag") != -1:
-                #
-                None
+                start_date = end_date
+                start_date.decrement_month()
+                return [line_number, start_date]
         return None
 
     def _get_credit_card_entries(

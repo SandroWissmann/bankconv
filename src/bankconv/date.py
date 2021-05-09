@@ -12,6 +12,21 @@ class Date:
         self.month = datestr[3:5]
         self.year = datestr[6:]
 
+    def decrement_month(self):
+        """
+        Decrements month by one month.
+        """
+        month: int = int(self.month)
+        month -= 1
+        if month == 0:
+            month == 12
+            year: int = int(self.year)
+            year -= 1
+            self.year = str(year)
+        self.month = str(month)
+        if len(self.month) == 1:
+            self.month = "0" + self.month
+
     def __repr__(self) -> str:
         return self._get_class_presentation()
 
