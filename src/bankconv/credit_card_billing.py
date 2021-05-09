@@ -38,7 +38,9 @@ class CreditCardBilling:
         currency = index_currency_list[1]
 
         index_start_date_list = []
-        index_start_date_list = self._get_start_date(text_lines, index + 1)
+        index_start_date_list = self._get_start_date(
+            text_lines, index + 1, end_date
+        )
         if index_start_date_list is None:
             print("Error: Start date not found in file")
             return False
@@ -189,7 +191,7 @@ class CreditCardBilling:
         return None
 
     def _get_start_date(
-        self, text_lines: List[str], start_line: int
+        self, text_lines: List[str], start_line: int, end_date: str
     ) -> Optional[List[Union[int, str]]]:
         """
         Search for start date in text lines
@@ -203,6 +205,11 @@ class CreditCardBilling:
                 if type(start_date) is not str:
                     return None
                 return [line_number, start_date]
+            # this is a hack. In one file from Sparkasse the date was missing
+            # so we assume it is end date - 1 month
+            if text_line.find("Saldovortrag") != -1:
+                # 
+
         return None
 
     def _get_year_from_date(self, date: str) -> str:
