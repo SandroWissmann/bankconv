@@ -6,13 +6,13 @@ import os
 import re
 import csv
 
-from bankconv.credit_card_entry import CreditCardEntry
+from bankconv.credit_card.booking_entry import BookingEntry
 from bankconv.date import Date
 
 
-class CreditCardBilling:
+class Bookings:
     def __init__(self):
-        self.credit_card_entries: List[CreditCardEntry] = []
+        self.booking_entries: List[BookingEntry] = []
 
     def add_monthly_billing_data(self, text_lines: List[str]) -> bool:
         index, end_date = self._get_end_date(text_lines)
@@ -48,20 +48,20 @@ class CreditCardBilling:
         index = index_start_date_list[0]
         start_date = index_start_date_list[1]
 
-        index, credit_card_entries = self._get_credit_card_entries(
+        (index, booking_entries,) = self._get_booking_entries(
             text_lines, index + 1, credit_card_number, currency, start_date
         )
 
-        credit_card_compensation = self._get_credit_card_compensation(
+        compensation = self._get_compensation(
             text_lines, index + 1, credit_card_number, currency, end_date
         )
-        self.credit_card_entries += credit_card_entries
+        self.booking_entries += booking_entries
 
         # if credit card is positive after all bookings a positive compensation
         # is already stated as the last credit card entry. Then no special case
         # compensation is found
-        if credit_card_compensation is not None:
-            self.credit_card_entries.append(credit_card_compensation)
+        if compensation is not None:
+            self.booking_entries.append(compensation)
         return True
 
     def write_to_directory(self, directory: str):
@@ -70,12 +70,12 @@ class CreditCardBilling:
         """
 
         filename_absolute: str = os.path.join(
-            directory, "credit_card_entries.csv"
+            directory, "credit_card_booking_entries.csv"
         )
 
-        with open(filename_absolute, mode="w") as credit_card_entries_file:
+        with open(filename_absolute, mode="w") as booking_entries_file:
             writer = csv.writer(
-                credit_card_entries_file,
+                booking_entries_file,
                 delimiter=",",
                 quotechar='"',
                 quoting=csv.QUOTE_MINIMAL,
@@ -95,16 +95,16 @@ class CreditCardBilling:
                 ]
             )
 
-            for credit_card_entry in self.credit_card_entries:
+            for booking_entry in self.booking_entries:
                 writer.writerow(
                     [
-                        credit_card_entry.credit_card_number,
-                        credit_card_entry.recite_date,
-                        credit_card_entry.booking_date,
-                        credit_card_entry.currency,
-                        credit_card_entry.amount,
-                        credit_card_entry.description,
-                        credit_card_entry.description_addition,
+                        booking_entry.credit_card_number,
+                        booking_entry.recite_date,
+                        booking_entry.booking_date,
+                        booking_entry.currency,
+                        booking_entry.amount,
+                        booking_entry.description,
+                        booking_entry.description_addition,
                     ]
                 )
 
@@ -213,19 +213,19 @@ class CreditCardBilling:
                 return [line_number, start_date]
         return None
 
-    def _get_credit_card_entries(
+    def _get_booking_entries(
         self,
         text_lines: List[str],
         start_line: int,
         credit_card_number: str,
         currency: str,
         start_date: Date,
-    ) -> List[Union[int, List[CreditCardEntry]]]:
+    ) -> List[Union[int, List[BookingEntry]]]:
         """
-        Search for credit card entries in text lines
-        Returns credit card entries and line_number
+        Search for credit card booking entries in text lines
+        Returns credit card booking entries and line_number
         """
-        credit_card_entries: List[CreditCardEntry] = []
+        booking_entries: List[BookingEntry] = []
 
         found_entry: bool = False
         for line_number, text_line in enumerate(
@@ -236,33 +236,33 @@ class CreditCardBilling:
             if text_line.isspace():
                 found_entry = False
                 continue
-            if not self._is_credit_card_entry(text_line):
+            if not self._is_entry(text_line):
                 if found_entry:
                     description_addition = text_line.strip()
-                    if credit_card_entries[-1].description_addition != "":
-                        credit_card_entries[-1].description_addition += "\t"
-                    credit_card_entries[
+                    if booking_entries[-1].description_addition != "":
+                        booking_entries[-1].description_addition += "\t"
+                    booking_entries[
                         -1
                     ].description_addition += description_addition
                 else:
                     print("Unknown: {}".format(text_line))
                 continue
             found_entry = True
-            credit_card_entry = CreditCardEntry(
+            booking_entry = BookingEntry(
                 credit_card_number, currency, text_line, start_date, None
             )
-            credit_card_entries.append(credit_card_entry)
+            booking_entries.append(booking_entry)
 
-        return [line_number, credit_card_entries]
+        return [line_number, booking_entries]
 
-    def _get_credit_card_compensation(
+    def _get_compensation(
         self,
         text_lines: List[str],
         start_line: int,
         credit_card_number: str,
         currency: str,
         end_date: Date,
-    ) -> Optional[CreditCardEntry]:
+    ) -> Optional[BookingEntry]:
         """
         Searches text lines for special credit card entry after the normal
         entries which represents the compensation of the credit card.
@@ -272,7 +272,7 @@ class CreditCardBilling:
         ):
             if text_line.find("Einzug von Kto.") == -1:
                 continue
-            return CreditCardEntry(
+            return BookingEntry(
                 credit_card_number, currency, text_line, None, end_date
             )
         return None
@@ -283,7 +283,7 @@ class CreditCardBilling:
         """
         return line.lstrip().startswith("--------------")
 
-    def _is_credit_card_entry(self, line: str) -> bool:
+    def _is_entry(self, line: str) -> bool:
         """
         Checks if passed line is a credit card enty in the format:
         DD.MM. DD.MM.   Description    Amount (+ or -)

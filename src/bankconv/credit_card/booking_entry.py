@@ -1,5 +1,5 @@
 """
-Module to represent one credit card entry in the billing
+Module to represent one credit card booking entry in the bookings
 """
 
 from typing import List
@@ -9,7 +9,7 @@ import re
 from bankconv.date import Date
 
 
-class CreditCardEntry:
+class BookingEntry:
     def __init__(
         self,
         credit_card_number: str,
