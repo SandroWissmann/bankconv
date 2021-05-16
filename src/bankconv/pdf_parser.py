@@ -1,4 +1,5 @@
 from typing import List
+from typing import TextIO
 
 import os
 
@@ -20,6 +21,7 @@ def get_text_lines_from_pdf(directory: str, filename_pdf: str) -> List[str]:
     text = text.replace(r"\xc3\xb6", "ö")
     text = text.replace(r"\xc3\xbc", "ü")
     text = text.replace(r"xc3x9c", "Ü")
+    text = text.replace(r"xc3x9cb", "Ü")
     text = text.replace(r"\xc3\x9f", "ß")
 
     text_lines: List[str] = text.split("\\n")
@@ -42,7 +44,7 @@ def write_text_lines_to_file_in_dir(
     """
     Write text lines to file.
     """
-    text_file: file = open(filename_txt_absolute, "w")
+    text_file: TextIO = open(filename_txt_absolute, "w")
     for text_line in text_lines:
         text_file.write(text_line)
         text_file.write("\n")
