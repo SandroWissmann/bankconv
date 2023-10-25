@@ -1,0 +1,5 @@
+setup.py
+bankconv.egg-info/PKG-INFO
+bankconv.egg-info/SOURCES.txt
+bankconv.egg-info/dependency_links.txt
+bankconv.egg-info/top_level.txt

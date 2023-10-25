@@ -1,0 +1,5 @@
+ <RCC>
+    <qresource prefix="/">
+        <file>pdf_to_utf8/dist/pdf_to_utf8</file>
+    </qresource>
+</RCC>

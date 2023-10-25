@@ -1,0 +1,6 @@
+virtualenv .venv
+source .venv/bin/activate
+pip3 install tika 
+python3 app.py "file.PDF"
+pip3 install pyinstaller 
+pyinstaller -D -F -n pdf_to_utf8 -c "pdf_to_utf8.py"
