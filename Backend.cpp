@@ -13,31 +13,124 @@ namespace bankconv {
 namespace {
 
 struct EntryCheckingAccount{
+    QString accountNumber; // Auftragskonto
+    QString dateFirst; // Buchung -> first date
+    QString dateSecond;// Valuata -> second date
+    QString payee; // Auftragsgeber/Empfänger
+    QString bookingType; // Buchungstext
+    QString bookingReason; // Verwendungszweck
+    QString saldo; // Saldo -> How much is on the account after booking
+    QString currency{"EUR"}; // WÄhrung
+    QString amount; // Betrag
     QString rawEntry;
 };
 
-QStringList toRows(
+std::vector<QString> toRows(
     const QByteArray& rawDataFromPdf)
 {
     QString result = QString::fromUtf8(rawDataFromPdf);
-    QStringList rows = result.split("\\n");
+    QStringList rawRows = result.split("\\n");
+    qWarning() << rawRows.size();
+
+    std::vector<QString> rows;
+    rows.reserve(rawRows.size());
+    for(auto& rawRow : rawRows) {
+        //rawRow = rawRow.simplified();
+        if(rawRow.isEmpty()) {
+            continue;
+        }
+        rows.emplace_back(rawRow);
+    }
     qWarning() << rows.size();
-    for(auto& row : rows) {
-        row = row.simplified();
+    return rows;
+}
+
+QString extractStartValue(const QString& row)
+{
+    auto startValue = row.section(' ', -1);
+    // TODO validate
+    return startValue;
+}
+
+QString extractFirstDate(const QString& row)
+{
+    // TODO error handling
+    return row.section(' ', 0,0);
+}
+
+QString extractSecondDate(const QString& row)
+{
+    // TODO error handling
+    return row.section(' ', 1,1);
+}
+
+QString extractBookingType(const QString& row)
+{
+    // TODO error handling
+    return row.section(' ', 2,2);
+}
+
+bool isAmount(const QString& row)
+{
+    static QRegularExpression re{R"(\d+,\d{2}(\+|-))"};
+    auto match = re.match(row);
+    return match.hasMatch();
+}
+
+std::pair<QString, QString> extractPayeeAndBookingReason(
+    std::vector<QString>::const_iterator& cit)
+{
+    const auto& entries = cit->split(QRegularExpression{R"(\s{2,})"});
+    qWarning() << entries;
+    Q_ASSERT(entries.size() == 2);
+    const auto payee = entries[0];
+    auto  bookingReason = entries[1];
+    ++cit;
+    while(!isAmount(*cit)) {
+        if(!bookingReason.isEmpty()) {
+            bookingReason += " ";
+        }
+        bookingReason += *cit;
+        ++cit;
     }
 
-    return rows;
+    return {payee, bookingReason};
 }
 
 std::vector<EntryCheckingAccount> toEntriesCheckingAccount(
     const QByteArray& rawDataFromPdf)
 {
-    auto rows = toRows(rawDataFromPdf);
+    const auto rows = toRows(rawDataFromPdf);
+
+    auto cit = std::find_if(rows.cbegin(), rows.cend(), [](const QString& row){
+        return row.startsWith(" Kontostand");
+    });
+    const auto startValue = extractStartValue(*cit);
+    qWarning() << "startValue: " << startValue;
+
+    ++cit;
+    const auto firstDate = extractFirstDate(*cit);
+    qWarning() << "firstDate: " <<  firstDate;
+    const auto secondDate = extractSecondDate(*cit);
+    qWarning() << "secondDate: " <<  secondDate;
+    const auto bookingType = extractBookingType(*cit);
+    qWarning() << "bookingType: " <<  bookingType;
+    ++cit;
+
+    // todo: based on booking type extraction might need adjustment here
+    const auto [payee,bookingReason ] = extractPayeeAndBookingReason(cit);
+    qWarning() << "payee: " << bookingReason;
+    qWarning() << "bookingReason: " << bookingReason;
+
+    const auto amount = cit->simplified();
+    qWarning() << amount;
 
     std::vector<EntryCheckingAccount> entries;
     entries.reserve(rows.size());
     for(const auto& row : rows) {
-        entries.emplace_back(EntryCheckingAccount{row});
+        EntryCheckingAccount entry;
+        entry.rawEntry = row;
+        entries.emplace_back(entry);
     }
     return entries;
 }
