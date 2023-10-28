@@ -2,6 +2,7 @@
 
 #include <QtCore/QDir>
 #include <QtCore/QProcess>
+#include <QtCore/QRegularExpression>
 
 #include <algorithm>
 
@@ -10,6 +11,36 @@
 namespace bankconv {
 
 namespace {
+
+struct EntryCheckingAccount{
+    QString rawEntry;
+};
+
+QStringList toRows(
+    const QByteArray& rawDataFromPdf)
+{
+    QString result = QString::fromUtf8(rawDataFromPdf);
+    QStringList rows = result.split("\\n");
+    qWarning() << rows.size();
+    for(auto& row : rows) {
+        row = row.simplified();
+    }
+
+    return rows;
+}
+
+std::vector<EntryCheckingAccount> toEntriesCheckingAccount(
+    const QByteArray& rawDataFromPdf)
+{
+    auto rows = toRows(rawDataFromPdf);
+
+    std::vector<EntryCheckingAccount> entries;
+    entries.reserve(rows.size());
+    for(const auto& row : rows) {
+        entries.emplace_back(EntryCheckingAccount{row});
+    }
+    return entries;
+}
 
 QVariantList getPdfFiles(const QUrl folder) {
 
@@ -90,11 +121,19 @@ void Backend::tryConvertToCSV()
         qWarning() << "Could not finnish conversion";
     }
 
-    QByteArray result = process.readAll();
+    //QByteArray result = process.readAll();
+    //QStringList rows = QString::fromUtf8(result).split("\n");
 
-//    QFile file(arguments[0] + ".txt");
+    QFile file("output.txt");
+    if (file.open(QFile::WriteOnly | QFile::Truncate)) {
+        QTextStream out(&file);
 
-//    qWarning() << QString::fromUtf8(result);
+        const auto entries = toEntriesCheckingAccount(process.readAll());
+
+        for(const auto& entry : entries) {
+            out << entry.rawEntry << "\n";
+        }
+    }
 }
 
 void Backend::_setPdfFiles(const QVariantList& pdfFiles)
@@ -108,3 +147,34 @@ void Backend::_setPdfFiles(const QVariantList& pdfFiles)
     }
 
 } // namespace sps
+
+
+/*
+
+// find Kontostand and Save Value at the end
+Kontostand am 04.03.2015, Auszug Nr.    3            6.953,30+
+
+// Save Dates Buchung Valuta
+06.03.2015 06.03.2015 Lastschrift
+// Save Auftraggeber/Empf�nger / delete excess soaces
+ARAL DOETLING A1            050307387187295171221200700
+// until value copy all without space into Verwendungszweck
+OLV71017761 05.03 07.38 ME7
+// Copy Betrag without space
+           52,91-
+// Add to start value
+
+10.03.2015 10.03.2015 Lastschrift
+AMAZON EU S.A.R.L.                  5 RUE PLAETIS
+
+302-3538322-9354736 Amazon.de 24234 81875217818
+
+2423481875217818                    XAYE5JvujTtZLKXla23hhxeWgBF,Rz
+
+Gläubiger-ID: DE24ZZZ00000561652
+
+            9,93-
+// marks the end
+Kontostand am 31.03.2015 um 20:04 Uhr           10.834,02+
+
+*/
