@@ -5,6 +5,7 @@
 #include <QtCore/QRegularExpression>
 
 #include <algorithm>
+#include <optional>
 
 #include <QDebug>
 
@@ -12,21 +13,20 @@ namespace bankconv {
 
 namespace {
 
-struct EntryCheckingAccount{
+struct EntryCheckingAccount {
     QString accountNumber; // Auftragskonto
-    QString dateFirst; // Buchung -> first date
-    QString dateSecond;// Valuata -> second date
-    QString payee; // Auftragsgeber/Empfänger
-    QString bookingType; // Buchungstext
+    QString dateFirst;     // Buchung -> first date
+    QString dateSecond;    // Valuata -> second date
+    QString payee;         // Auftragsgeber/Empfänger
+    QString bookingType;   // Buchungstext
     QString bookingReason; // Verwendungszweck
-    QString saldo; // Saldo -> How much is on the account after booking
-    QString currency{"EUR"}; // WÄhrung
-    QString amount; // Betrag
-    QString rawEntry;
+    QString saldo;         // Saldo -> How much is on the account after booking
+    QString currency;      // WÄhrung
+    QString amount;        // Betrag
+    QString rawEntry;      // TODO remove
 };
 
-std::vector<QString> toRows(
-    const QByteArray& rawDataFromPdf)
+std::vector<QString> toRows(const QByteArray &rawDataFromPdf)
 {
     QString result = QString::fromUtf8(rawDataFromPdf);
     QStringList rawRows = result.split("\\n");
@@ -34,9 +34,9 @@ std::vector<QString> toRows(
 
     std::vector<QString> rows;
     rows.reserve(rawRows.size());
-    for(auto& rawRow : rawRows) {
-        //rawRow = rawRow.simplified();
-        if(rawRow.isEmpty()) {
+    for (auto &rawRow : rawRows) {
+        // rawRow = rawRow.simplified();
+        if (rawRow.isEmpty()) {
             continue;
         }
         rows.emplace_back(rawRow);
@@ -45,100 +45,256 @@ std::vector<QString> toRows(
     return rows;
 }
 
-QString extractStartValue(const QString& row)
+QString extractValue(const QString& row)
 {
+    auto value = row.section(' ', -1);
+    const auto token = value.back();
+    if (token == '-') {
+        value.push_front(token);
+    }
+    value.removeLast();
+    // TODO validate
+    value.remove('.');
+    return value;
+}
+
+std::optional<QString> extractStartValue(std::vector<QString>::const_iterator &cit,
+                          const std::vector<QString> &rows)
+{
+    cit = std::find_if(cit, rows.cend(), [](const QString &row) {
+        return row.startsWith(" Kontostand");
+    });
+
+    if(cit == rows.cend()) {
+        return{};
+    }
+
+    const auto row = *cit;
     auto startValue = row.section(' ', -1);
+    const auto token = startValue.back();
+    if (token == '-') {
+        startValue.push_front(token);
+    }
+    startValue.removeLast();
     // TODO validate
     return startValue;
 }
 
-QString extractFirstDate(const QString& row)
+bool isEndOfPageEntries(const QString &row)
 {
-    // TODO error handling
-    return row.section(' ', 0,0);
+    return row == " ";
 }
 
-QString extractSecondDate(const QString& row)
+bool isEndOfDocument(const QString &row)
 {
-    // TODO error handling
-    return row.section(' ', 1,1);
+    return row.startsWith(" Kontostand am");
 }
 
-QString extractBookingType(const QString& row)
+QString extractDateFirst(const QString &row)
 {
     // TODO error handling
-    return row.section(' ', 2,2);
+    return row.section(' ', 0, 0);
 }
 
-bool isAmount(const QString& row)
+QString extractDateSecond(const QString &row)
+{
+    // TODO error handling
+    return row.section(' ', 1, 1);
+}
+
+QString extractBookingType(const QString &row)
+{
+    // TODO error handling
+    return row.section(' ', 2, 2);
+}
+
+bool isAmount(const QString &row)
 {
     static QRegularExpression re{R"(\d+,\d{2}(\+|-))"};
     auto match = re.match(row);
     return match.hasMatch();
 }
 
-std::pair<QString, QString> extractPayeeAndBookingReason(
-    std::vector<QString>::const_iterator& cit)
+QString
+extractBookingReason(std::vector<QString>::const_iterator &cit)
 {
-    const auto& entries = cit->split(QRegularExpression{R"(\s{2,})"});
-    qWarning() << entries;
-    Q_ASSERT(entries.size() == 2);
-    const auto payee = entries[0];
-    auto  bookingReason = entries[1];
-    ++cit;
-    while(!isAmount(*cit)) {
-        if(!bookingReason.isEmpty()) {
+    QString bookingReason;
+    while (!isAmount(*cit)) {
+        if (!bookingReason.isEmpty()) {
             bookingReason += " ";
         }
         bookingReason += *cit;
         ++cit;
     }
+    bookingReason = bookingReason.simplified();
+
+    return bookingReason;
+}
+
+std::pair<QString, QString>
+extractPayeeAndBookingReason(std::vector<QString>::const_iterator &cit)
+{
+    static QRegularExpression re{R"(\s{2,})"};
+    const auto &entries = cit->split(re);
+    qWarning() << entries;
+    Q_ASSERT(entries.size() == 2);
+    const auto payee = entries[0];
+    auto bookingReason = entries[1];
+    ++cit;
+    while (!isAmount(*cit)) {
+        if (!bookingReason.isEmpty()) {
+            bookingReason += " ";
+        }
+        bookingReason += *cit;
+        ++cit;
+    }
+    bookingReason = bookingReason.simplified();
 
     return {payee, bookingReason};
 }
 
-std::vector<EntryCheckingAccount> toEntriesCheckingAccount(
-    const QByteArray& rawDataFromPdf)
+std::pair<QString, QString>
+extractPayeeAndBookingReason(std::vector<QString>::const_iterator &cit, const QString& bookingType)
 {
-    const auto rows = toRows(rawDataFromPdf);
+    if(bookingType == "Geldautomat") {
+        // Not payee known for Geldautomat
+        return { QString{}, extractBookingReason(cit)};
+    }
+    return extractPayeeAndBookingReason(cit);
 
-    auto cit = std::find_if(rows.cbegin(), rows.cend(), [](const QString& row){
-        return row.startsWith(" Kontostand");
-    });
-    const auto startValue = extractStartValue(*cit);
-    qWarning() << "startValue: " << startValue;
+}
 
-    ++cit;
-    const auto firstDate = extractFirstDate(*cit);
-    qWarning() << "firstDate: " <<  firstDate;
-    const auto secondDate = extractSecondDate(*cit);
-    qWarning() << "secondDate: " <<  secondDate;
+QString extractAmount(const QString &row)
+{
+    auto amount = row.simplified();
+    const auto token = amount.back();
+    if (token == '-') {
+        amount.push_front(token);
+    }
+    amount.removeLast();
+    return amount;
+}
+
+double calculateSaldo(double saldoLast, double amount)
+{
+    return saldoLast + amount;
+}
+
+QString calculateSaldo(QString saldoLast, QString amount)
+{
+    saldoLast.remove('.');
+    saldoLast.replace(',', '.');
+    amount.remove('.');
+    amount.replace(',', '.');
+
+    const auto saldoLastDouble =saldoLast.toDouble();
+    qWarning() << "saldoLastDouble: " << saldoLastDouble;
+    const auto amountDouble = amount.toDouble();
+    qWarning() << "amountDouble: " << amountDouble;
+    const auto saldoAsDouble =
+        calculateSaldo(saldoLastDouble, amountDouble);
+    auto saldo = QString::number(saldoAsDouble, 'f', 2);
+    saldo.replace('.', ',');
+    return saldo;
+}
+
+std::optional<EntryCheckingAccount> extractEntry(std::vector<QString>::const_iterator &cit, const QString& saldoLast)
+{
+    const auto dateFirst = extractDateFirst(*cit);
+    qWarning() << "dateFirst: " << dateFirst;
+    const auto dateSecond = extractDateSecond(*cit);
+    qWarning() << "dateSecond: " << dateSecond;
     const auto bookingType = extractBookingType(*cit);
-    qWarning() << "bookingType: " <<  bookingType;
+    qWarning() << "bookingType: " << bookingType;
     ++cit;
 
-    // todo: based on booking type extraction might need adjustment here
-    const auto [payee,bookingReason ] = extractPayeeAndBookingReason(cit);
+    const auto [payee, bookingReason] =
+        extractPayeeAndBookingReason(cit, bookingType);
     qWarning() << "payee: " << bookingReason;
     qWarning() << "bookingReason: " << bookingReason;
 
-    const auto amount = cit->simplified();
+    const auto amount = extractAmount(*cit);
     qWarning() << amount;
 
-    std::vector<EntryCheckingAccount> entries;
-    entries.reserve(rows.size());
-    for(const auto& row : rows) {
-        EntryCheckingAccount entry;
-        entry.rawEntry = row;
-        entries.emplace_back(entry);
+    const auto saldo = calculateSaldo(saldoLast, amount);
+    qWarning() << "saldo: " << saldo;
+
+    return EntryCheckingAccount{
+       "NOT IMPLEMENTED", // TODO AccountNumber
+       dateFirst,
+       dateSecond,
+       payee,
+       bookingType,
+       bookingReason,
+       saldo,
+       "EUR", // TODO currency
+       amount};
+}
+
+std::vector<EntryCheckingAccount>
+toEntriesCheckingAccount(const QByteArray &rawDataFromPdf)
+{
+    const auto rows = toRows(rawDataFromPdf);
+
+    std::vector<EntryCheckingAccount> entries{};
+    auto cit = rows.begin();
+    const auto maybeStartValue = extractStartValue(cit, rows);
+    if(!maybeStartValue) {
+        return {};
+    }
+    const auto& startValue = *maybeStartValue;
+    qWarning() << "startValue: " << startValue;
+
+    ++cit;
+
+    auto saldoLast = startValue;
+    // Run until reach end of document
+    for (;;) {
+        // Run until current page is finnished
+        for(;;) {
+            if(isEndOfPageEntries(*cit)) {
+                break;
+            }
+            if(isEndOfDocument(*cit)) {
+                // Sanity check. Calculated saldo should be same as the one in
+                // the file
+                Q_ASSERT(extractValue(*cit) == entries.back().saldo);
+                return entries;
+            }
+            if(const auto maybeEntry = extractEntry(cit, saldoLast); maybeEntry.has_value()) {
+                entries.emplace_back(*maybeEntry);
+                saldoLast = entries.back().saldo;
+            }
+            ++cit;
+            if(cit == rows.end()) {
+                break;
+            }
+        }
+
+        cit = std::find_if(cit, rows.cend(), [](const QString &row) {
+            return row.startsWith("Datum Wert Erläuterung");
+        });
+        ++cit;
+    }
+
+    constexpr char separator = ';';
+
+    for(const auto& entry : entries) {
+        qWarning() << entry.accountNumber << separator << entry.dateFirst
+            << separator << entry.dateSecond << separator << entry.payee
+            << separator << entry.bookingType << separator
+            << entry.bookingReason << separator << entry.saldo << separator
+            << entry.currency << separator << entry.amount << separator
+            << entry.currency;
     }
     return entries;
 }
 
-QVariantList getPdfFiles(const QUrl folder) {
+QVariantList getPdfFiles(const QUrl folder)
+{
 
     QDir dir{folder.path()};
-    const auto& entryList = dir.entryList(QDir::Files);
+    const auto &entryList = dir.entryList(QDir::Files);
 
     qWarning() << dir;
 
@@ -147,7 +303,7 @@ QVariantList getPdfFiles(const QUrl folder) {
 
     for (const QString &filename : entryList) {
 
-        if(!filename.endsWith(".pdf") && !filename.endsWith(".PDF")) {
+        if (!filename.endsWith(".pdf") && !filename.endsWith(".PDF")) {
             continue;
         }
 
@@ -158,11 +314,10 @@ QVariantList getPdfFiles(const QUrl folder) {
     return pdfFiles;
 }
 
-}
+} // namespace
 
 Backend::Backend(QObject *parent)
-    : QObject{parent},
-      m_pdfFiles(getPdfFiles(m_folder))
+    : QObject{parent}, m_pdfFiles(getPdfFiles(m_folder))
 {
 }
 
@@ -174,11 +329,10 @@ QUrl Backend::folder() const
 bool Backend::buttonStartEnabled() const
 {
     return true;
-    //return !m_pdfFiles.isEmpty();
+    // return !m_pdfFiles.isEmpty();
 }
 
-
-QVariantList  Backend::pdfFiles() const
+QVariantList Backend::pdfFiles() const
 {
     return m_pdfFiles;
 }
@@ -197,16 +351,21 @@ void Backend::setFolder(const QUrl &folder)
 
 void Backend::tryConvertToCSV()
 {
-    QString program = "/home/sandro/Documents/bankconv/bankconv/pdf_to_utf8/dist/pdf_to_utf8";
-    //QStringList arguments = {m_folder.path() + "/" + m_pdfFiles[0].toString()};
+    QString program =
+        "/home/sandro/Documents/bankconv/bankconv/pdf_to_utf8/dist/pdf_to_utf8";
+    // QStringList arguments = {m_folder.path() + "/" +
+    // m_pdfFiles[0].toString()};
 
-    qWarning() << "program exists:" << QFileInfo(program).exists();
+    qWarning() << "program exists:" << QFileInfo::exists(program);
 
-    QStringList arguments = {"/mnt/Buisness/Dokumente/Beide/Haushalt/Kontoauszüge/Sparkasse Emsland/Girokonto Sandro/2015/2015.04 Sparkasse Emsland Kontoauszug 102303070.PDF"};
+    QStringList arguments = {
+        "/mnt/Buisness/Dokumente/Beide/Haushalt/Kontoauszüge/Sparkasse "
+        "Emsland/Girokonto Sandro/2015/2015.04 Sparkasse Emsland Kontoauszug "
+        "102303070.PDF"};
 
     QProcess process;
     process.start(program, arguments);
-    if(!process.waitForStarted()) {
+    if (!process.waitForStarted()) {
         qWarning() << "Could not start converter";
     }
 
@@ -214,33 +373,58 @@ void Backend::tryConvertToCSV()
         qWarning() << "Could not finnish conversion";
     }
 
-    //QByteArray result = process.readAll();
-    //QStringList rows = QString::fromUtf8(result).split("\n");
+    // QByteArray result = process.readAll();
+    // QStringList rows = QString::fromUtf8(result).split("\n");
 
-    QFile file("output.txt");
+    const auto rawDataFromPdf = process.readAll();
+    const auto rows = toRows(rawDataFromPdf);
+
+    QFile fileDebug{"debug.txt"};
+    if (fileDebug.open(QFile::WriteOnly | QFile::Truncate)) {
+        QTextStream outDebug(&fileDebug);
+        for (const auto &row : rows) {
+            outDebug << row << "\n";
+        }
+    }
+    fileDebug.close();
+
+    QFile file("output.csv");
     if (file.open(QFile::WriteOnly | QFile::Truncate)) {
         QTextStream out(&file);
 
-        const auto entries = toEntriesCheckingAccount(process.readAll());
+        const auto entries = toEntriesCheckingAccount(rawDataFromPdf);
 
-        for(const auto& entry : entries) {
-            out << entry.rawEntry << "\n";
+        constexpr char separator = ';';
+
+        out << "Auftragskonto" << separator << "Buchung" << separator
+            << "Valuta"
+            << "Auftraggeber/Empf�nger" << separator << "Buchungstext"
+            << separator << "Verwendungszweck" << separator << "Saldo"
+            << separator << "W�hrung" << separator << "Betrag" << separator
+            << "W�hrung" << '\n';
+
+        for (const auto &entry : entries) {
+            out << entry.accountNumber << separator << entry.dateFirst
+                << separator << entry.dateSecond << separator << entry.payee
+                << separator << entry.bookingType << separator
+                << entry.bookingReason << separator << entry.saldo << separator
+                << entry.currency << separator << entry.amount << separator
+                << entry.currency << '\n';
         }
     }
+    file.close();
 }
 
-void Backend::_setPdfFiles(const QVariantList& pdfFiles)
+void Backend::_setPdfFiles(const QVariantList &pdfFiles)
 {
-    if(m_pdfFiles == pdfFiles) {
+    if (m_pdfFiles == pdfFiles) {
         return;
     }
     m_pdfFiles = pdfFiles;
     emit pdfFilesChanged();
+}
 
-    }
-
-} // namespace sps
-
+} // namespace bankconv
 
 /*
 
