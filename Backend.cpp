@@ -23,7 +23,6 @@ struct EntryCheckingAccount {
     QString saldo;         // Saldo -> How much is on the account after booking
     QString currency;      // WÄhrung
     QString amount;        // Betrag
-    QString rawEntry;      // TODO remove
 };
 
 std::vector<QString> toRows(const QByteArray &rawDataFromPdf)
@@ -43,6 +42,38 @@ std::vector<QString> toRows(const QByteArray &rawDataFromPdf)
     }
     qWarning() << rows.size();
     return rows;
+}
+
+std::optional<QString> extractAccountNumber(const std::vector<QString>& rows)
+{
+    const auto cit = std::find_if(rows.cbegin(), rows.cend(), [](const QString &row) {
+        return row.startsWith("Onlinekonto");
+    });
+    if(cit == rows.cend()) {
+        return{};
+    }
+
+    const auto& row = *cit;
+    const auto items = row.split(',');
+    if(items.size() != 2) {
+        return {};
+    }
+    const auto accountNumber = items.back();
+    return accountNumber.simplified();
+}
+
+std::optional<QString> extractCurrency(const std::vector<QString>& rows)
+{
+    const auto cit = std::find_if(rows.cbegin(), rows.cend(), [](const QString &row) {
+        return row.startsWith("Datum Wert Erläuterung ");
+    });
+    if(cit == rows.cend()) {
+        return{};
+    }
+    const auto& row = *cit;
+    const auto items = row.split(' ');
+
+    return items.back();
 }
 
 QString extractValue(const QString& row)
@@ -198,7 +229,11 @@ QString calculateSaldo(QString saldoLast, QString amount)
     return saldo;
 }
 
-std::optional<EntryCheckingAccount> extractEntry(std::vector<QString>::const_iterator &cit, const QString& saldoLast)
+std::optional<EntryCheckingAccount> extractEntry(
+    std::vector<QString>::const_iterator &cit,
+    const QString& saldoLast,
+    const QString& accountNumber,
+    const QString& currency)
 {
     const auto dateFirst = extractDateFirst(*cit);
     qWarning() << "dateFirst: " << dateFirst;
@@ -220,14 +255,14 @@ std::optional<EntryCheckingAccount> extractEntry(std::vector<QString>::const_ite
     qWarning() << "saldo: " << saldo;
 
     return EntryCheckingAccount{
-       "NOT IMPLEMENTED", // TODO AccountNumber
+       accountNumber,
        dateFirst,
        dateSecond,
        payee,
        bookingType,
        bookingReason,
        saldo,
-       "EUR", // TODO currency
+       currency,
        amount};
 }
 
@@ -235,6 +270,18 @@ std::vector<EntryCheckingAccount>
 toEntriesCheckingAccount(const QByteArray &rawDataFromPdf)
 {
     const auto rows = toRows(rawDataFromPdf);
+
+    const auto maybeAccountNumber = extractAccountNumber(rows);
+    if(!maybeAccountNumber) {
+        return{};
+    }
+    const auto& accountNumber = *maybeAccountNumber;
+
+    const auto maybeCurrency = extractCurrency(rows);
+    if(!maybeAccountNumber) {
+        return{};
+    }
+    const auto& currency = *maybeCurrency;
 
     std::vector<EntryCheckingAccount> entries{};
     auto cit = rows.begin();
@@ -261,7 +308,9 @@ toEntriesCheckingAccount(const QByteArray &rawDataFromPdf)
                 Q_ASSERT(extractValue(*cit) == entries.back().saldo);
                 return entries;
             }
-            if(const auto maybeEntry = extractEntry(cit, saldoLast); maybeEntry.has_value()) {
+            if(const auto maybeEntry =
+                extractEntry(cit, saldoLast, accountNumber, currency);
+                maybeEntry.has_value()) {
                 entries.emplace_back(*maybeEntry);
                 saldoLast = entries.back().saldo;
             }
@@ -351,12 +400,10 @@ void Backend::setFolder(const QUrl &folder)
 
 void Backend::tryConvertToCSV()
 {
+    // TODO relative path based on exe.
     QString program =
         "/home/sandro/Documents/bankconv/bankconv/pdf_to_utf8/dist/pdf_to_utf8";
-    // QStringList arguments = {m_folder.path() + "/" +
-    // m_pdfFiles[0].toString()};
-
-    qWarning() << "program exists:" << QFileInfo::exists(program);
+    Q_ASSERT(QFileInfo::exists(program));
 
     QStringList arguments = {
         "/mnt/Buisness/Dokumente/Beide/Haushalt/Kontoauszüge/Sparkasse "
@@ -367,14 +414,13 @@ void Backend::tryConvertToCSV()
     process.start(program, arguments);
     if (!process.waitForStarted()) {
         qWarning() << "Could not start converter";
+        return;
     }
 
     if (!process.waitForFinished()) {
         qWarning() << "Could not finnish conversion";
+        return;
     }
-
-    // QByteArray result = process.readAll();
-    // QStringList rows = QString::fromUtf8(result).split("\n");
 
     const auto rawDataFromPdf = process.readAll();
     const auto rows = toRows(rawDataFromPdf);
