@@ -18,6 +18,8 @@ qt_add_qml_module(app
     SOURCES
         Backend.cpp
         Backend.hpp
+        EntryCheckingAccount.hpp
+        EntryCheckingAccount.cpp
 )
 
 target_link_libraries(app PRIVATE Qt6::Quick Qt6::Widgets)
