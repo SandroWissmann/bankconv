@@ -3,6 +3,10 @@
 
 #include <QtCore/QString>
 
+#include <vector>
+
+class QTextStream;
+
 namespace bankconv {
 
 struct EntryCheckingAccount {
@@ -17,8 +21,9 @@ struct EntryCheckingAccount {
     QString amount;        // Betrag
 };
 
-std::vector<EntryCheckingAccount> toEntriesCheckingAccount(const QByteArray &rawDataFromPdf);
+std::vector<EntryCheckingAccount> toEntriesCheckingAccount(const std::vector<QString>& rows);
 
+QTextStream& operator<<(QTextStream& os, const EntryCheckingAccount& obj);
 
 }
 
