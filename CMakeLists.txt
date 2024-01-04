@@ -24,6 +24,8 @@ qt_add_qml_module(app
         EntryCreditCard.cpp
         ExtractUtils.hpp
         ExtractUtils.cpp
+        ExtractEntriesCreditCardSparkasseEmsland.hpp
+        ExtractEntriesCreditCardSparkasseEmsland.cpp
         ExtractEntriesCheckingAccountSparkasseEmsland.hpp
         ExtractEntriesCheckingAccountSparkasseEmsland.cpp
 )

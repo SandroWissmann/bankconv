@@ -20,9 +20,6 @@ struct EntryCreditCard {
     QString amount;
 };
 
-
-std::vector<EntryCreditCard> toEntriesCreditCard(const std::vector<QString> &rows);
-
 QTextStream& operator<<(QTextStream& os, const EntryCreditCard& obj);
 
 }

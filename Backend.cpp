@@ -3,6 +3,7 @@
 #include "EntryCheckingAccount.hpp"
 #include "EntryCreditCard.hpp"
 #include "ExtractEntriesCheckingAccountSparkasseEmsland.hpp"
+#include "ExtractEntriesCreditCardSparkasseEmsland.hpp"
 
 #include <QtCore/QDir>
 #include <QtCore/QProcess>
@@ -88,7 +89,7 @@ bool isPdfCheckingAccount(const std::vector<QString>& rows)
     return it != rows.end();
 }
 
-bool isPdfFileCreditCard(const std::vector<QString>& rows)
+bool isPdfFileCreditCardSparkasseEmsland(const std::vector<QString>& rows)
 {
     const auto it = std::ranges::find_if(rows,
                                          [](QString row){
@@ -176,8 +177,8 @@ void tryConvertPdfToCSV(const QString& folder, const QString& filenamePdf)
         const auto entriesCheckingAccount = extractEntriesCheckingAccountSparkasseEmsland(rows);
         exportEntriesToCSVFile(entriesCheckingAccount, filenameCSV);
     }
-    else if(isPdfFileCreditCard(rows)) {
-        const auto entriesCreditCard = toEntriesCreditCard(rows);
+    else if(isPdfFileCreditCardSparkasseEmsland(rows)) {
+        const auto entriesCreditCard = extractEntriesCreditCardSparkasseEmsland(rows);
         exportEntriesToCSVFile(entriesCreditCard, filenameCSV);
     }
     else {
