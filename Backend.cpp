@@ -2,6 +2,7 @@
 
 #include "EntryCheckingAccount.hpp"
 #include "EntryCreditCard.hpp"
+#include "ExtractEntriesCheckingAccountSparkasseEmsland.hpp"
 
 #include <QtCore/QDir>
 #include <QtCore/QProcess>
@@ -172,7 +173,7 @@ void tryConvertPdfToCSV(const QString& folder, const QString& filenamePdf)
 
     const auto filenameCSV = toFileNameAbsoluteCSV(filenameAbsolutePdf);
     if(isPdfCheckingAccount(rows)) {
-        const auto entriesCheckingAccount = toEntriesCheckingAccount(rows);
+        const auto entriesCheckingAccount = extractEntriesCheckingAccountSparkasseEmsland(rows);
         exportEntriesToCSVFile(entriesCheckingAccount, filenameCSV);
     }
     else if(isPdfFileCreditCard(rows)) {

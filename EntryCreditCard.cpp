@@ -1,6 +1,6 @@
 #include "EntryCreditCard.hpp"
 
-#include "EntryUtils.hpp"
+#include "ExtractUtils.hpp"
 
 #include <QtCore/QTextStream>
 #include <QtCore/QList>

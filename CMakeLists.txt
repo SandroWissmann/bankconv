@@ -22,8 +22,10 @@ qt_add_qml_module(app
         EntryCheckingAccount.cpp
         EntryCreditCard.hpp
         EntryCreditCard.cpp
-        EntryUtils.hpp
-        EntryUtils.cpp
+        ExtractUtils.hpp
+        ExtractUtils.cpp
+        ExtractEntriesCheckingAccountSparkasseEmsland.hpp
+        ExtractEntriesCheckingAccountSparkasseEmsland.cpp
 )
 
 target_link_libraries(app PRIVATE Qt6::Quick Qt6::Widgets)

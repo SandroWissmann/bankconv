@@ -1,4 +1,4 @@
-#include "EntryUtils.hpp"
+#include "ExtractUtils.hpp"
 
 #include <QtCore/QList>
 #include <QtCore/QRegularExpression>
