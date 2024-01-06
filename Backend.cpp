@@ -4,6 +4,7 @@
 #include "EntryCreditCard.hpp"
 #include "ExtractEntriesCheckingAccountSparkasseEmsland.hpp"
 #include "ExtractEntriesCreditCardSparkasseEmsland.hpp"
+#include "ExtractEntriesCreditCardTfBank.hpp"
 
 #include <QtCore/QDir>
 #include <QtCore/QProcess>
@@ -62,10 +63,23 @@ std::vector<QString> toRows(const QByteArray &rawDataFromPdf)
     return rows;
 }
 
+QString replaceEndingPdf(QString filenameWithPdf, const QString& extension)
+{
+    if(filenameWithPdf.endsWith("PDF")) {
+        filenameWithPdf.replace("PDF", extension);
+        return filenameWithPdf;
+    }
+    if(filenameWithPdf.endsWith("pdf")) {
+        filenameWithPdf.replace("pdf", extension);
+        return filenameWithPdf;
+    }
+    Q_ASSERT(false);
+    return {};
+}
+
 QString toFileNameAbsoluteText(QString filenameAbolutePdf)
 {
-    filenameAbolutePdf.replace("PDF", "txt");
-    return filenameAbolutePdf;
+    return replaceEndingPdf(filenameAbolutePdf, "txt");
 }
 
 void exportRowsToTextFile(const std::vector<QString>& rows, const QString& filenameAbsolute)
@@ -99,10 +113,19 @@ bool isPdfFileCreditCardSparkasseEmsland(const std::vector<QString>& rows)
     return it != rows.end();
 }
 
+bool isPdfFileCreditCardTfBank(const std::vector<QString>& rows)
+{
+    const auto it = std::ranges::find_if(rows,
+                                         [](QString row){
+                                             return row.startsWith("Rechnung für Ihre TF Mastercard Gold");
+                                         });
+
+    return it != rows.end();
+}
+
 QString toFileNameAbsoluteCSV(QString filenameAbolutePdf)
 {
-    filenameAbolutePdf.replace("PDF", "csv");
-    return filenameAbolutePdf;
+    return replaceEndingPdf(filenameAbolutePdf, "csv");
 }
 
 void writeEntries(QTextStream& textStream, const std::vector<EntryCheckingAccount>& entries)
@@ -170,16 +193,29 @@ void tryConvertPdfToCSV(const QString& folder, const QString& filenamePdf)
 
     // Print rows to text file for debug
     const auto filenameAbsoluteDebug = toFileNameAbsoluteText(filenameAbsolutePdf);
+    if(filenameAbsoluteDebug.isEmpty()) {
+        qWarning() << "filename txt debug is empty";
+        return;
+    }
+    qWarning() << "filenameAbsoluteDebug: " << filenameAbsoluteDebug;
     exportRowsToTextFile(rows, filenameAbsoluteDebug);
 
     const auto filenameCSV = toFileNameAbsoluteCSV(filenameAbsolutePdf);
-    if(isPdfCheckingAccount(rows)) {
-        const auto entriesCheckingAccount = extractEntriesCheckingAccountSparkasseEmsland(rows);
-        exportEntriesToCSVFile(entriesCheckingAccount, filenameCSV);
+    if(filenameCSV.isEmpty()) {
+        qWarning() << "filename csv is empty";
+        return;
     }
-    else if(isPdfFileCreditCardSparkasseEmsland(rows)) {
+    if(isPdfFileCreditCardSparkasseEmsland(rows)) {
         const auto entriesCreditCard = extractEntriesCreditCardSparkasseEmsland(rows);
         exportEntriesToCSVFile(entriesCreditCard, filenameCSV);
+    }
+    else if(isPdfFileCreditCardTfBank(rows)) {
+        const auto entriesCreditCard = extractEntriesCreditCardTfBank(rows);
+        exportEntriesToCSVFile(entriesCreditCard, filenameCSV);
+    }
+    else if(isPdfCheckingAccount(rows)) {
+        const auto entriesCheckingAccount = extractEntriesCheckingAccountSparkasseEmsland(rows);
+        exportEntriesToCSVFile(entriesCheckingAccount, filenameCSV);
     }
     else {
         qWarning() << "Unsupported pdf: " << filenamePdf;
@@ -213,7 +249,7 @@ QVariantList getPdfFiles(const QUrl folder)
 Backend::Backend(QObject *parent)
     : QObject{parent},
       m_folder{
-      "/mnt/Buisness/Dokumente/Beide/Haushalt/Kontoauszüge/Sparkasse Emsland/Girokonto Sandro/2015/"
+      "/mnt/Buisness/Dokumente/Sandro/Banken/TF Bank/Kreditkarte/"
       },
       m_pdfFiles(getPdfFiles(m_folder))
 {

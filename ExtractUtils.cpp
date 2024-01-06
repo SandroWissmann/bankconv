@@ -24,8 +24,8 @@ double calculateSaldo(double saldoLast, double amount)
 QString extractAmount(QString row)
 {
     row = row.simplified();
-    const auto enrties = row.split(' ');
-    auto amount = enrties.back();
+    const auto entries = row.split(' ');
+    auto amount = entries.back();
     amount = amount.remove('.');
 
     if(isAmountWithSignAtTheEnd(amount)) {

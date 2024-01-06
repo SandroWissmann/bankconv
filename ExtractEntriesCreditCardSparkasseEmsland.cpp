@@ -3,12 +3,13 @@
 #include "EntryCreditCard.hpp"
 #include "ExtractUtils.hpp"
 
-#include <QtCore/QTextStream>
 #include <QtCore/QList>
 #include <QtCore/QDebug>
 #include <QtCore/QRegularExpression>
 
 namespace bankconv {
+
+namespace {
 
 std::optional<QString> extractDateCompensation(QString row)
 {
@@ -19,12 +20,17 @@ std::optional<QString> extractDateCompensation(QString row)
 
     row = row.simplified();
 
-    auto entries = row.split(' ');
+    const auto entries = row.split(' ');
     if(entries.size() < 2) {
         qWarning() << "Date could not be extracted";
         return{};
     }
     return entries.back();
+}
+
+std::optional<QString> extractRowDateCompensation(const std::vector<QString>& rows)
+{
+    return findRowWhoStartsWith(rows, {"Abrechnung / Saldenmitteilung "});
 }
 
 std::optional<QString> extractYear(QString row)
@@ -37,11 +43,6 @@ std::optional<QString> extractYear(QString row)
 
     const auto& dateCompensation = *maybeDateCompensation;
     return dateCompensation.section('.',-1);
-}
-
-std::optional<QString> extractRowDateCompensation(const std::vector<QString>& rows)
-{
-    return findRowWhoStartsWith(rows, {"Abrechnung / Saldenmitteilung "});
 }
 
 std::optional<QString> extractYear(const std::vector<QString>& rows)
@@ -446,6 +447,8 @@ std::optional<EntryCreditCard> extractEntryCompensation(
         currency,
         amount
     };
+}
+
 }
 
 

@@ -4,6 +4,10 @@
 
 namespace bankconv {
 
+namespace {
+
+}
+
 QTextStream& operator<<(QTextStream& os, const EntryCreditCard& obj)
 {
     constexpr char separator = ';';
@@ -17,13 +21,13 @@ QTextStream& operator<<(QTextStream& os, const EntryCreditCard& obj)
         obj.amount << separator<<
         obj.currency << separator<<
         obj.payee<< separator<< // Transaktionsbeschreibung = payee
-        obj.bookingReason;  //"Transaktionsbeschreibung Zusatz"
+        obj.bookingReason << separator;  //"Transaktionsbeschreibung Zusatz"
 
-    for(int i=0; i<6; ++i) {
+    for(int i=0; i<5; ++i) {
         os << separator;
     }
 
-        // skip remaining because an empty ; would confuse excel
+    // skip remaining because an empty ; would confuse excel
 
 //       << separator<<
 //        "" << separator<<  // ??? unclear were we get the number from

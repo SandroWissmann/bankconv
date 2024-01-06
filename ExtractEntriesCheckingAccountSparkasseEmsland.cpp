@@ -6,7 +6,6 @@
 #include <QtCore/QRegularExpression>
 #include <QtCore/QDate>
 #include <QtCore/QDebug>
-#include <QtCore/QTextStream>
 
 #include <vector>
 #include <set>
