@@ -126,8 +126,14 @@ QString extractDateSecond(const QString &row)
     return dateRaw;
 }
 
-QString extractPayee(const QString& row)
+QString extractPayee(QString row)
 {
+    row = row.simplified();
+
+    if(row.contains("Bezahlung Zahlung")) {
+        return "Zahlung";
+    }
+
     const auto entries = row.split(" ");
 
     auto cit = std::find(entries.cbegin(), entries.cend(), "Kauf");
@@ -174,8 +180,10 @@ QString extractPayee(const QString& row)
     return payee;
 }
 
-QString extractBookingReason(const QString& row)
+QString extractBookingReason(QString row)
 {
+    row = row.simplified();
+    qWarning() << "extractBookingReason row:" << row;
     const auto entries = row.split(" ");
     auto cit = std::find(entries.cbegin(), entries.cend(), "Wechselkurs");
     if(cit == entries.cend()) {
@@ -201,11 +209,23 @@ QString extractBookingReason(const QString& row)
 
 QString extractAmountCreditCardTfBank(QString row)
 {
-    const auto entries = row.split(" ");
+    auto entries = row.split(" ");
+    entries.pop_back();
 
-    Q_ASSERT(entries.size() > 2);
-    auto amount = entries[entries.size() -2];
-    amount.replace('.', ',');
+    QString amount;
+    for(auto it = entries.crbegin(); it !=entries.crend(); ++it) {
+        auto part = *it;
+
+        auto ok = false;
+        part.toFloat(&ok);
+        if(!ok) {
+            return amount;
+        }
+
+        part.replace('.', ',');
+        amount.push_front(part);
+    }
+
     return amount;
 }
 
